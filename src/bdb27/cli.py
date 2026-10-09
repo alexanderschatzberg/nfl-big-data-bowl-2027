@@ -91,6 +91,10 @@ def main() -> None:
     sub.add_parser("screen", help="cheap trait screens: repeatability, redundancy, transfer, value")
     sub.add_parser("matched", help="matched drill-to-game transfer table (the headline analysis)")
     sub.add_parser("conventional", help="conventional predictors and interactions vs success, per position")
+    sub.add_parser("value", help="pre-specified test: WR braking vs hitch separation against man coverage")
+    sub.add_parser("usage", help="do drill traits predict route and alignment shares?")
+    d = sub.add_parser("development", help="season 1 -> 2 and 1 -> 3 change, and whether the Combine predicts it")
+    d.add_argument("--n-perm", type=int, default=1000)
     i = sub.add_parser("interactions", help="all-pairs interaction scan with family-wise permutation p")
     i.add_argument("--n-perm", type=int, default=1000)
     n = sub.add_parser("fingerprint", help="train the contrastive movement-fingerprint network")
@@ -126,6 +130,24 @@ def main() -> None:
         t = pd.concat(tables)
         t.to_csv(args.out / "conventional.csv", index=False)
         print(t[t["q"] < 0.10].round(3).to_string(index=False))
+    elif args.cmd in ("value", "usage"):
+        import importlib
+
+        t = importlib.import_module(f".{args.cmd}", __package__).table()
+        args.out.mkdir(parents=True, exist_ok=True)
+        t.to_csv(args.out / f"{args.cmd}.csv", index=False)
+        print(t.round(3).to_string(index=False))
+    elif args.cmd == "development":
+        from . import development
+
+        args.out.mkdir(parents=True, exist_ok=True)
+        s = development.seasons()
+        g = development.group_change(s)
+        g.to_csv(args.out / "development_group.csv", index=False)
+        print(g.round(3).to_string(index=False))
+        t = development.predict_change(s, args.n_perm)
+        t.to_csv(args.out / "development_predict.csv", index=False)
+        print(t.head(15).round(3).to_string(index=False))
     elif args.cmd == "interactions":
         import numpy as np
         import pandas as pd

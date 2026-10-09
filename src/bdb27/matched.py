@@ -62,19 +62,46 @@ PAIRS = [
     Pair("DB", "break-drill burst", _DB_BREAK, "acc_win10", "cover", min_plays=30),
     Pair("DB", "break-drill turn rate", _DB_BREAK, "cut_turn_rate", "cover", min_plays=30),
     Pair("DB", "40 tracked top speed", ["FORTY_YARD_DASH"], "vmax", "cover", 0.99, 30),
+    # Sharper versions of pairs whose game side was too loose the first time.
+    Pair("OL", "pull top speed, lateral run plays", _PULL, "vmax", "not pass_block and lateral >= 4", min_plays=10),
+    Pair("OL", "pull burst, lateral run plays", _PULL, "acc_win10", "not pass_block and lateral >= 4", min_plays=10),
+    Pair("WR", "40 start burst vs press", ["FORTY_YARD_DASH"], "acc_win10", "cushion <= 3", min_plays=15),
+    Pair("WR", "go-drill start burst vs press", ["GO_ROUTE_RIGHT"], "acc_win10", "cushion <= 3", min_plays=15),
+    Pair("DL", "hoop lateral acceleration, edge rushes", ["RUN_THE_HOOP_DRILL"], "lat_acc",
+         "rush and lined_up == 'EDGE'", min_plays=30),
+    Pair("DL", "hoop curve speed, edge rushes", ["RUN_THE_HOOP_DRILL"], "curve_speed",
+         "rush and lined_up == 'EDGE'", 0.5, 30),
+    Pair("DL", "pass-rush drill burst, edge rushes", ["PASS_RUSH_DRILL"], "acc_win05",
+         "rush and lined_up == 'EDGE'", min_plays=30),
 ]
+LATERAL_WINDOW = 1.6  # seconds after the snap in which a pulling or stretching lineman has moved sideways
 
 
 def game_plays() -> pd.DataFrame:
-    plays = connect().execute(
+    con = connect()
+    plays = con.execute(
         """
         SELECT game_id, play_id, nfl_id, combine_position AS position, lined_up_position AS lined_up, route_ran,
-               player_get_off IS NOT NULL AS rush, pressure_allowed IS NOT NULL AS pass_block,
+               cushion, player_get_off IS NOT NULL AS rush, pressure_allowed IS NOT NULL AS pass_block,
                coverage_assignment IS NOT NULL AS cover
         FROM player_play JOIN combine_results USING (nfl_id)
         """
     ).df()
-    return pd.read_parquet(artifacts_dir() / "game_play_features.parquet").merge(plays, on=["game_id", "play_id", "nfl_id"])
+    # Sideways travel just after the snap. Game tracking has no teammates to tell a pull from
+    # a stretch block, so linemen's "lateral run plays" are both.
+    lateral = con.execute(
+        f"""
+        WITH snap AS (SELECT game_id, play_id, nfl_id, min(time) AS ts, arg_min(y, time) AS y0
+                      FROM game_tracking WHERE event = 'ball_snap' GROUP BY ALL)
+        SELECT t.game_id, t.play_id, t.nfl_id, max(abs(t.y - s.y0)) AS lateral
+        FROM game_tracking t JOIN snap s USING (game_id, play_id, nfl_id)
+        WHERE t.time BETWEEN s.ts AND s.ts + INTERVAL '{LATERAL_WINDOW} seconds'
+        GROUP BY ALL
+        """
+    ).df()
+    key = ["game_id", "play_id", "nfl_id"]
+    return (pd.read_parquet(artifacts_dir() / "game_play_features.parquet").merge(plays, on=key)
+            .merge(lateral, on=key, how="left"))
 
 
 def pair_frame(pair: Pair, plays: pd.DataFrame, **overrides) -> pd.DataFrame:
