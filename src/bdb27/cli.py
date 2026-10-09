@@ -4,7 +4,7 @@ from pathlib import Path
 
 from joblib import Parallel, delayed
 
-from . import clips, combine, evaluate, outcomes, screen
+from . import clips, combine, evaluate, game_features, outcomes, screen
 from .data import build_parquet
 from .hypotheses import HYPOTHESES
 
@@ -17,6 +17,7 @@ def prep() -> None:
     combine.build()
     outcomes.build()
     clips.build()
+    game_features.build()
 
 
 def _blocks(name: str, outcome: str):
@@ -88,6 +89,8 @@ def main() -> None:
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("prep", help="CSV -> Parquet, Combine features, NFL outcomes, clip tensors")
     sub.add_parser("screen", help="cheap trait screens: repeatability, redundancy, transfer, value")
+    sub.add_parser("matched", help="matched drill-to-game transfer table (the headline analysis)")
+    sub.add_parser("conventional", help="conventional predictors and interactions vs success, per position")
     n = sub.add_parser("fingerprint", help="train the contrastive movement-fingerprint network")
     n.add_argument("--folds", nargs="*", type=int, default=list(range(5)))
     n.add_argument("--steps", type=int)
@@ -100,6 +103,27 @@ def main() -> None:
         prep()
     elif args.cmd == "screen":
         run_screen(args.out)
+    elif args.cmd == "matched":
+        from . import matched
+
+        t = matched.table()
+        args.out.mkdir(parents=True, exist_ok=True)
+        t.to_csv(args.out / "matched_transfer.csv", index=False)
+        print(t.round(3).to_string(index=False))
+    elif args.cmd == "conventional":
+        from . import conventional
+
+        args.out.mkdir(parents=True, exist_ok=True)
+        tables = []
+        for pos in conventional.POSITIONS:
+            null = Parallel(n_jobs=-1)(delayed(conventional.min_p_null)(pos, list(range(i, i + 25)))
+                                       for i in range(0, 1000, 25))
+            tables.append(conventional.adjust(conventional.run(pos), [x for c in null for x in c]))
+        import pandas as pd
+
+        t = pd.concat(tables)
+        t.to_csv(args.out / "conventional.csv", index=False)
+        print(t[t["q"] < 0.10].round(3).to_string(index=False))
     elif args.cmd == "fingerprint":
         run_fingerprint(args.folds, args.steps, args.out)
     else:

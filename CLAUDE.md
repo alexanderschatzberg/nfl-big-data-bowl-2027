@@ -9,11 +9,14 @@ uv sync --extra nn --extra modal      # torch and modal are optional extras
 uv run pytest                          # all tests
 uv run pytest tests/test_kinematics.py::test_stop_and_go_break_is_measured   # one test
 uv run bdb27 prep                      # CSV -> Parquet, Combine features, NFL outcomes, clip tensors (~1 min)
+uv run bdb27 matched                   # matched drill-to-game transfer table (headline analysis)
+uv run bdb27 conventional              # stopwatch predictors + interactions vs success, family-wise p
 uv run bdb27 screen                    # cheap trait screens, writes outputs/screen_*.csv
 uv run bdb27 fit --n-perm 200          # transfer + value tests with permutation nulls
 uv run bdb27 fingerprint --folds 0 --steps 300   # local smoke test of the neural model
 uv run modal run modal_app.py::main --n-perm 2000 --seeds 3   # full run on T4 GPUs (needs a payment method on Modal)
 BDB27_GPU= uv run modal run modal_app.py::main --n-perm 2000 --seeds 3   # same, CPU only
+uv run modal run modal_app.py::signature --seeds 3   # Combine-only signature network
 ```
 
 `BDB27_DATA` overrides the data directory (default `./data`; `/vol` on Modal). `data/*` and `outputs/` are gitignored — never commit them, and don't assume they exist in a fresh clone. R is not installed.
@@ -34,6 +37,15 @@ Data flow, all cached under `data/artifacts/`:
 - `evaluate.py` scores everything out-of-fold with R² measured against the training-fold mean. `SparseIncrement` (baseline ridge + best 3 traits on its residuals, selected inside each fold) is the model the permutation test uses; the null shuffles which player owns which tracking profile.
 - `clips.py` + `fingerprint.py`: a two-tower contrastive network matching a player's set of Combine clips to their set of game clips. Inputs are orientation-free channels (speed, tangential acceleration, turn rate, lateral acceleration). Batches and evaluation line-ups are always **same role (edge / interior DL, tackle / interior OL, CB / S, WR, TE) and draft class**, so the model cannot win on position, body type or season. Embeddings from different fold or seed models are in different coordinate systems and must never be averaged or pooled; for downstream use, train one model on all players (`train_split_fold(fold=-1)`, legitimate because no outcome enters training).
 - `modal_app.py` fans out the five folds × seeds on GPU and the permutation chunks on CPU. `cli.py` holds the functions both it and the local CLI call.
+
+- `game_features.py` computes the *same* per-clip features on game plays as `kinematics.py` does on drills. `matched.py` pairs each drill family with the game situation it rehearses (e.g. comeback/curl drills ↔ hitch routes) and tests one feature measured identically on both sides, net of 40 time, size and role. This like-for-like design is what found signal; comparing drill traits with loosely related game statistics did not.
+- `conventional.py` tests every standard Combine number (and pre-specified interactions) against success measures per position, with outcomes centred within on-field role and a min-p permutation test over each position's whole family of tests. `career.py` is the pooled 510-player playing-time test.
+
+Lessons that cost time to learn:
+
+- Body-type measurements proxy for role (long arms → tackle → more pressure faced). Centre outcomes within role before correlating.
+- Game-side capability should be an upper quantile over plays (0.75–0.95), not the median: most plays don't demand the trait.
+- Contrastive line-ups leak through anything that differs systematically between a player's own pair and other pairs: role, class, which drills are in each half, and how many clips a player has. `fingerprint.py` guards each of these; keep the guards when changing it.
 
 With ~65–80 players per study, adding parameters is costly: a ridge over all traits scores worse than the baseline. Keep trait sets small and any selection inside the cross-validation fold.
 
