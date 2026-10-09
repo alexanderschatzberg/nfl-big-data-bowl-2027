@@ -11,6 +11,7 @@ uv run pytest tests/test_kinematics.py::test_stop_and_go_break_is_measured   # o
 uv run bdb27 prep                      # CSV -> Parquet, Combine features, NFL outcomes, clip tensors (~1 min)
 uv run bdb27 matched                   # matched drill-to-game transfer table (headline analysis)
 uv run bdb27 conventional              # stopwatch predictors + interactions vs success, family-wise p
+uv run bdb27 robustness                # headline pair: variants, placebos, bootstrap CI, season-to-season benchmark
 uv run bdb27 value                     # pre-specified WR braking vs man-coverage separation test
 uv run bdb27 usage                     # drill traits vs route / alignment shares
 uv run bdb27 development               # season 1->2 and 1->3 change, and Combine predictors of it
@@ -50,6 +51,7 @@ Lessons that cost time to learn:
 - Body-type measurements proxy for role (long arms → tackle → more pressure faced). Centre outcomes within role before correlating.
 - Game-side capability should be an upper quantile over plays (0.75–0.95), not the median: most plays don't demand the trait.
 - `snaps_per_season` is logged, so its spread is four times wider among late picks than early ones. Any "X matters more for late picks" interaction on it is a scale artefact until it also shows on raw snaps or within pick tiers.
+- Separation is reliable (about 0.7) yet no movement capability predicts it, even measured in games. A null from the Combine side against separation is about the outcome, not the Combine.
 - Contrastive line-ups leak through anything that differs systematically between a player's own pair and other pairs: role, class, which drills are in each half, and how many clips a player has. `fingerprint.py` guards each of these; keep the guards when changing it.
 
 With ~65–80 players per study, adding parameters is costly: a ridge over all traits scores worse than the baseline. Keep trait sets small and any selection inside the cross-validation fold.

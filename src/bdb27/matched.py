@@ -82,9 +82,9 @@ def game_plays() -> pd.DataFrame:
     plays = con.execute(
         """
         SELECT game_id, play_id, nfl_id, combine_position AS position, lined_up_position AS lined_up, route_ran,
-               cushion, player_get_off IS NOT NULL AS rush, pressure_allowed IS NOT NULL AS pass_block,
+               cushion, g.season, player_get_off IS NOT NULL AS rush, pressure_allowed IS NOT NULL AS pass_block,
                coverage_assignment IS NOT NULL AS cover
-        FROM player_play JOIN combine_results USING (nfl_id)
+        FROM player_play JOIN combine_results USING (nfl_id) JOIN games g USING (game_id)
         """
     ).df()
     # Sideways travel just after the snap. Game tracking has no teammates to tell a pull from
@@ -110,9 +110,9 @@ def pair_frame(pair: Pair, plays: pd.DataFrame, **overrides) -> pd.DataFrame:
     min_plays = overrides.get("min_plays", pair.min_plays)
     feature = overrides.get("feature", pair.feature)
     drills = pd.read_parquet(artifacts_dir() / "combine_player_drill.parquet")
-    drills = drills[drills["drill"].isin(pair.drills) & (drills["combine_position"] == pair.position)]
+    drills = drills[drills["drill"].isin(overrides.get("drills", pair.drills)) & (drills["combine_position"] == pair.position)]
     c = drills.groupby("nfl_id")[feature].mean().rename("c")
-    sub = plays[plays["position"] == pair.position].query(overrides.get("plays", pair.plays))
+    sub = plays[plays["position"] == pair.position].query(overrides.get("where", pair.plays))
     g = sub.groupby("nfl_id")[feature]
     g = g.quantile(q).where(g.count() >= min_plays).rename("g")
     role = plays.dropna(subset=["lined_up"]).groupby("nfl_id")["lined_up"].agg(lambda s: s.mode().iat[0]).rename("role")
@@ -135,3 +135,68 @@ def table() -> pd.DataFrame:
     t = pd.DataFrame(rows)
     t["partial_q"] = stats.false_discovery_control(t["partial_p"], method="bh")
     return t
+
+
+def _partial(d: pd.DataFrame) -> float:
+    return test(d)["partial_rho"]
+
+
+def robustness(name: str = "stop-route braking", n_boot: int = 2000) -> pd.DataFrame:
+    """The headline pair under every reasonable variation, plus placebos that should be null."""
+    plays = game_plays()
+    pair = next(p for p in PAIRS if p.name == name)
+    variants = {"as specified": {}}
+    variants |= {f"game quantile {q}": {"quantile": q} for q in (0.5, 0.75, 0.85, 0.95)}
+    variants |= {f"min plays {m}": {"min_plays": m} for m in (10, 30, 40)}
+    variants |= {f"feature {f}": {"feature": f} for f in ("dec_win10", "dec_p95", "dec_max") if f != pair.feature}
+    variants |= {f"drill {d} only": {"drills": [d]} for d in pair.drills}
+    variants |= {"all breaking routes": {"where": f"route_ran in {list(BREAKING)}"},
+                 "placebo: go routes in games": {"where": "route_ran == 'GO'"},
+                 "placebo: go-route drill": {"drills": ["GO_ROUTE_RIGHT"]},
+                 "placebo: 40-yard dash": {"drills": ["FORTY_YARD_DASH"]}}
+    rows = [{"variant": v} | test(pair_frame(pair, plays, **o)) for v, o in variants.items()]
+    d = pair_frame(pair, plays).reset_index(drop=True)
+    rng = np.random.default_rng(0)
+    boot = [_partial(d.iloc[rng.integers(0, len(d), len(d))]) for _ in range(n_boot)]
+    null = [_partial(d.assign(c=rng.permutation(d["c"].to_numpy()))) for _ in range(n_boot)]
+    t = pd.DataFrame(rows)
+    t.attrs = {"ci95": np.percentile(boot, [2.5, 97.5]).round(3).tolist(),
+               "perm_p": (1 + np.sum(np.abs(null) >= abs(_partial(d)))) / (1 + n_boot)}
+    return t
+
+
+def benchmark(name: str = "stop-route braking", season_min: int = 12) -> dict:
+    """How good is the drill as a predictor, next to the best available yardstick?
+
+    The yardstick is the same game measure from the player's own previous
+    season. Also reports the reliability of each side and the transfer
+    correlation corrected for it.
+    """
+    plays = game_plays()
+    pair = next(p for p in PAIRS if p.name == name)
+    d = pair_frame(pair, plays)
+    sub = plays[(plays["position"] == pair.position)].query(pair.plays)
+    sub = sub[sub["nfl_id"].isin(d["nfl_id"])]
+    g = sub.groupby(["nfl_id", "season"])[pair.feature]
+    by_season = g.quantile(pair.quantile).where(g.count() >= season_min).unstack()
+    pairs = pd.concat([by_season[[a, b]].set_axis(["prev", "next"], axis=1).dropna()
+                       for a, b in zip(by_season.columns[:-1], by_season.columns[1:])])
+    # Split-half reliability of the game capability (random halves of each player's plays).
+    rng = np.random.default_rng(0)
+    halves = []
+    for _ in range(200):
+        h = rng.integers(0, 2, len(sub))
+        a = sub[h == 0].groupby("nfl_id")[pair.feature].quantile(pair.quantile)
+        b = sub[h == 1].groupby("nfl_id")[pair.feature].quantile(pair.quantile)
+        halves.append(stats.spearmanr(*a.align(b, join="inner"))[0])
+    r_half = float(np.mean(halves))
+    game_rel = 2 * r_half / (1 + r_half)
+    drills = pd.read_parquet(artifacts_dir() / "combine_player_drill.parquet")
+    drills = drills[drills["drill"].isin(pair.drills) & drills["nfl_id"].isin(d["nfl_id"])]
+    wide = drills.pivot(index="nfl_id", columns="drill", values=pair.feature).dropna()
+    r_drill = stats.spearmanr(wide.iloc[:, 0], wide.iloc[:, 1])[0] if wide.shape[1] == 2 else np.nan
+    drill_rel = 2 * r_drill / (1 + r_drill)
+    rho = stats.spearmanr(d["c"], d["g"])[0]
+    return {"n": len(d), "combine_to_game": rho, "season_to_next_season": stats.spearmanr(pairs["prev"], pairs["next"])[0],
+            "season_pairs": len(pairs), "game_reliability": game_rel, "drill_to_drill": r_drill,
+            "drill_reliability": drill_rel, "corrected_for_reliability": rho / np.sqrt(game_rel * drill_rel)}

@@ -136,3 +136,21 @@ def predict_change(s: pd.DataFrame, n_perm: int = 2000) -> pd.DataFrame:
             t.insert(0, "position", position)
             tables.append(t)
     return pd.concat(tables).sort_values("p")
+
+
+def retention(s: pd.DataFrame, position: str = "DL", predictor: str = "rush__acc_win05") -> pd.DataFrame:
+    """Is a predictor about staying on the field at all, or about how much a player plays?
+
+    The logged-snaps outcome mixes the two: a season with no snaps is a zero.
+    """
+    x = interactions.design(position)["df"].set_index("nfl_id")[predictor].dropna()
+    rows = []
+    for year in (1, 2, 3):
+        snaps = s[(s["position"] == position) & (s["year"] == year)].set_index("nfl_id")["snaps"]
+        d = pd.concat([x.rename("x"), snaps.rename("snaps")], axis=1).dropna()
+        played = d["snaps"] > 0
+        rows.append({"year": year, "n": len(d), "share_played": played.mean(),
+                     "z_played": d.loc[played, "x"].mean(), "z_did_not": d.loc[~played, "x"].mean(),
+                     "p_played": stats.mannwhitneyu(d.loc[played, "x"], d.loc[~played, "x"]).pvalue,
+                     "rho_snaps_among_played": stats.spearmanr(d.loc[played, "x"], d.loc[played, "snaps"])[0]})
+    return pd.DataFrame(rows)

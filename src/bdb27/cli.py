@@ -91,6 +91,7 @@ def main() -> None:
     sub.add_parser("screen", help="cheap trait screens: repeatability, redundancy, transfer, value")
     sub.add_parser("matched", help="matched drill-to-game transfer table (the headline analysis)")
     sub.add_parser("conventional", help="conventional predictors and interactions vs success, per position")
+    sub.add_parser("robustness", help="headline pair: variants, placebos, season benchmark, game movement vs value")
     sub.add_parser("value", help="pre-specified test: WR braking vs hitch separation against man coverage")
     sub.add_parser("usage", help="do drill traits predict route and alignment shares?")
     d = sub.add_parser("development", help="season 1 -> 2 and 1 -> 3 change, and whether the Combine predicts it")
@@ -148,6 +149,21 @@ def main() -> None:
         t = development.predict_change(s, args.n_perm)
         t.to_csv(args.out / "development_predict.csv", index=False)
         print(t.head(15).round(3).to_string(index=False))
+        print(development.retention(s).round(3).to_string(index=False))
+    elif args.cmd == "robustness":
+        from . import matched, value
+
+        args.out.mkdir(parents=True, exist_ok=True)
+        t = matched.robustness()
+        t.to_csv(args.out / "robustness.csv", index=False)
+        print(t.round(3).to_string(index=False))
+        print(t.attrs)
+        for name in ("stop-route braking", "40 tracked top speed"):
+            print(name, {k: round(float(v), 3) for k, v in matched.benchmark(name).items()})
+        g = value.game_movement()
+        g.to_csv(args.out / "game_movement.csv", index=False)
+        print(g.head(8).round(3).to_string(index=False))
+        print(g.attrs)
     elif args.cmd == "interactions":
         import numpy as np
         import pandas as pd

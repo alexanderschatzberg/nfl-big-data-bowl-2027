@@ -68,3 +68,65 @@ def table(position: str = "WR") -> pd.DataFrame:
             rows.append({"predictor": name, "outcome": y, "coverage": cov or "any",
                          "primary": name == "combine braking" and (y, cov) == tests[0]} | matched.test(d))
     return pd.DataFrame(rows)
+
+
+ROUTE_SETS = {"hitch": ["HITCH"], "cuts": ["OUT", "IN", "SLANT", "CORNER", "POST"], "go": ["GO"], "all": None}
+GAME_FEATURES = ["vmax", "dec_win05", "acc_win05", "lat_acc", "cut_turn_rate", "curve_speed", "brk_reacc_10", "path_eff"]
+
+
+def game_movement(position: str = "WR", quantile: float = 0.9, min_plays: int = 20) -> pd.DataFrame:
+    """Exploratory: does movement capability measured *in games* relate to separation or yards?
+
+    If it does not, a null from the Combine side says little about the Combine:
+    the outcome is not driven by movement capability wherever it is measured.
+    `attrs["separation_reliability"]` shows the outcome is not simply noise.
+    """
+    from scipy import stats
+
+    from . import evaluate
+
+    con = connect()
+    out = con.execute(
+        """
+        SELECT game_id, play_id, nfl_id, separation_at_pass_forward AS sep, cushion AS cush,
+               coalesce(rec_yards, 0) AS yds
+        FROM player_play
+        """
+    ).df()
+    w = matched.game_plays().drop(columns="cushion")
+    w = w[(w["position"] == position) & w["route_ran"].notna()].merge(out, on=["game_id", "play_id", "nfl_id"])
+    w["cush"] = w["cush"].fillna(w["cush"].median())
+    s = w.dropna(subset=["sep"]).copy()
+    s["sep"] -= s.groupby("route_ran")["sep"].transform("mean")
+    s["sep"] -= np.polyval(np.polyfit(s["cush"], s["sep"], 1), s["cush"])
+    meta = con.execute(f"SELECT nfl_id, {', '.join(matched.SIZE_SPEED)} FROM combine_results").df().set_index("nfl_id")
+    role = w.groupby("nfl_id")["lined_up"].agg(lambda x: x.mode().iat[0]).rename("role")
+    rows = []
+    for name, routes in ROUTE_SETS.items():
+        a = w if routes is None else w[w["route_ran"].isin(routes)]
+        b = s if routes is None else s[s["route_ran"].isin(routes)]
+        g, h = a.groupby("nfl_id"), b.groupby("nfl_id")
+        outcomes = {"separation": h["sep"].mean().where(h.size() >= min_plays),
+                    "yards per route": g["yds"].mean().where(g.size() >= 2 * min_plays)}
+        for f in GAME_FEATURES:
+            x = g[f].quantile(quantile).where(g[f].count() >= min_plays).rename("x")
+            for oname, y in outcomes.items():
+                d = pd.concat([x, y.rename("y"), meta, role], axis=1).dropna(subset=["x", "y"])
+                Z = np.column_stack([d[matched.SIZE_SPEED].fillna(d[matched.SIZE_SPEED].median()).to_numpy(float),
+                                     pd.get_dummies(d["role"], drop_first=True, dtype=float).to_numpy()])
+                rho, p = stats.spearmanr(evaluate._residualize(d["x"].to_numpy(float), Z),
+                                         evaluate._residualize(d["y"].to_numpy(float), Z))
+                rows.append({"routes": name, "game_feature": f, "outcome": oname, "n": len(d), "partial_rho": rho, "p": p})
+    t = pd.DataFrame(rows)
+    t["q"] = stats.false_discovery_control(t["p"], method="bh")
+    rng = np.random.default_rng(0)
+    n = s.groupby("nfl_id").size()
+    keep = n[n >= 2 * min_plays].index
+    halves = []
+    for _ in range(100):
+        half = rng.integers(0, 2, len(s))
+        a, b = (s[half == k].groupby("nfl_id")["sep"].mean().reindex(keep) for k in (0, 1))
+        halves.append(stats.spearmanr(a, b)[0])
+    r = float(np.mean(halves))
+    t.attrs["separation_reliability"] = 2 * r / (1 + r)
+    return t.sort_values("p")
