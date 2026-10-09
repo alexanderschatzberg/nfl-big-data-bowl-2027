@@ -111,9 +111,16 @@ def _combine(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return out
 
 
-def wr_outcomes() -> pd.DataFrame:
-    p = load_plays("WR")
-    p = p[p["route_ran"].notna() & p["separation_at_pass_forward"].notna()].reset_index(drop=True)
+def raw_rate(plays: pd.DataFrame, values: pd.Series, name: str, sign: float = 1.0) -> pd.DataFrame:
+    """An unadjusted per-play rate, shrunk toward the position average."""
+    v = values.astype(float)
+    return player_aggregate(plays, v - v.mean(), name, sign)
+
+
+def wr_outcomes(position: str = "WR") -> pd.DataFrame:
+    routes = load_plays(position)
+    routes = routes[routes["route_ran"].notna()].reset_index(drop=True)
+    p = routes[routes["separation_at_pass_forward"].notna()].reset_index(drop=True)
     num = CONTEXT_NUM + ["cushion", "dropback_duration"]
     cat = CONTEXT_CAT + ["route_ran"]
     brk = p[p["route_ran"].isin(BREAK_ROUTES)].reset_index(drop=True)
@@ -122,6 +129,9 @@ def wr_outcomes() -> pd.DataFrame:
         player_aggregate(brk, over_expected(brk, "separation_at_pass_forward", num, cat), "sep_oe_break"),
         player_aggregate(p, over_expected(p, "separation_at_pass_forward", num, cat), "sep_oe_all"),
         player_aggregate(brk_k, over_expected(brk_k, "game_dec_max", num, cat), "game_braking_oe"),
+        raw_rate(routes, routes["rec_yards"].fillna(0), "yards_per_route"),
+        raw_rate(routes, routes["target"], "targets_per_route"),
+        raw_rate(p, p["separation_at_pass_forward"], "separation_raw"),
     ])
 
 
@@ -138,6 +148,7 @@ def ol_outcomes() -> pd.DataFrame:
                          "pressure_allowed_oe", sign=-1),
         player_aggregate(pk, over_expected(pk, "peak_pressure_probability_allowed", num, CONTEXT_CAT),
                          "peak_pressure_prob_oe", sign=-1),
+        raw_rate(p, p["pressure_allowed"], "pressure_allowed_raw", sign=-1),
     ])
 
 
@@ -153,13 +164,17 @@ def dl_outcomes() -> pd.DataFrame:
         player_aggregate(p, over_expected(p, "pressure", num + ["dropback_duration"], CONTEXT_CAT, binary=True),
                          "pressure_rate_oe"),
         player_aggregate(pk, over_expected(pk, "game_burst_1s", num, CONTEXT_CAT), "game_burst_oe"),
+        raw_rate(p, p["pressure"], "pressure_rate_raw"),
+        raw_rate(p, p["sack"].fillna(0), "sack_rate_raw"),
+        raw_rate(p, p["player_get_off"], "get_off_raw", sign=-1),
     ])
 
 
-BUILDERS = {"WR": wr_outcomes, "OL": ol_outcomes, "DL": dl_outcomes}
+BUILDERS = {"WR": wr_outcomes, "TE": lambda: wr_outcomes("TE"), "OL": ol_outcomes, "DL": dl_outcomes}
 
 
-def build() -> None:
-    build_game_kinematics()
+def build(kinematics: bool = True) -> None:
+    if kinematics:
+        build_game_kinematics()
     for pos, fn in BUILDERS.items():
         fn().to_parquet(artifacts_dir() / f"outcomes_{pos}.parquet", index=False)
