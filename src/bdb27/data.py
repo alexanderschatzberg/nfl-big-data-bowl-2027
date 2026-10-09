@@ -12,6 +12,11 @@ def data_dir() -> Path:
     return Path(os.environ.get("BDB27_DATA", "data"))
 
 
+def raw_dir() -> Path:
+    """Where the competition CSVs live. Separate from `data_dir` so they can sit on a read-only mount."""
+    return Path(os.environ.get("BDB27_RAW", data_dir()))
+
+
 def parquet_dir() -> Path:
     return data_dir() / "parquet"
 
@@ -35,7 +40,7 @@ def build_parquet(force: bool = False) -> None:
         sample = "" if name in GAME_TRACKING else ", sample_size=-1"
         tmp = dst.with_suffix(".tmp")
         con.execute(
-            f"COPY (SELECT * FROM read_csv('{data_dir() / (name + '.csv')}', nullstr='NA'{sample})) "
+            f"COPY (SELECT * FROM read_csv('{raw_dir() / (name + '.csv')}', nullstr='NA'{sample})) "
             f"TO '{tmp}' (FORMAT parquet, COMPRESSION zstd)"
         )
         tmp.rename(dst)

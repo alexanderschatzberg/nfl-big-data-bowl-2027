@@ -197,6 +197,14 @@ def benchmark(name: str = "stop-route braking", season_min: int = 12) -> dict:
     r_drill = stats.spearmanr(wide.iloc[:, 0], wide.iloc[:, 1])[0] if wide.shape[1] == 2 else np.nan
     drill_rel = 2 * r_drill / (1 + r_drill)
     rho = stats.spearmanr(d["c"], d["g"])[0]
-    return {"n": len(d), "combine_to_game": rho, "season_to_next_season": stats.spearmanr(pairs["prev"], pairs["next"])[0],
-            "season_pairs": len(pairs), "game_reliability": game_rel, "drill_to_drill": r_drill,
+
+    def ci(a: pd.Series, b: pd.Series) -> list:
+        a, b = a.to_numpy(), b.to_numpy()
+        idx = rng.integers(0, len(a), (2000, len(a)))
+        return np.percentile([stats.spearmanr(a[i], b[i])[0] for i in idx], [2.5, 97.5]).tolist()
+
+    return {"n": len(d), "combine_to_game": rho, "combine_ci": ci(d["c"], d["g"]),
+            "season_to_next_season": stats.spearmanr(pairs["prev"], pairs["next"])[0],
+            "season_ci": ci(pairs["prev"], pairs["next"]), "season_pairs": len(pairs),
+            "season_players": int(pairs.index.nunique()), "game_reliability": game_rel, "drill_to_drill": r_drill,
             "drill_reliability": drill_rel, "corrected_for_reliability": rho / np.sqrt(game_rel * drill_rel)}

@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "duckdb>=1.1",
     "joblib>=1.4",
+    "matplotlib>=3.11.2",
     "numpy>=2.0",
     "pandas>=2.2",
     "pyarrow>=17",
@@ -21,7 +22,12 @@ nn = ["torch>=2.4"]
 bdb27 = "bdb27.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "ipykernel>=7.4.0",
+    "nbconvert>=7.17.1",
+    "nbformat>=5.11.1",
+    "pytest>=8",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -12,11 +12,13 @@ PERM_REPEATS = 3  # CV repeats per permutation; the observed statistic uses the 
 PERM_CHUNK = 10
 
 
-def prep() -> None:
+def prep(neural: bool = True) -> None:
+    """`neural=False` skips the clip tensors, which only the neural models read."""
     build_parquet()
     combine.build()
     outcomes.build()
-    clips.build()
+    if neural:
+        clips.build()
     game_features.build()
 
 
@@ -91,6 +93,7 @@ def main() -> None:
     sub.add_parser("screen", help="cheap trait screens: repeatability, redundancy, transfer, value")
     sub.add_parser("matched", help="matched drill-to-game transfer table (the headline analysis)")
     sub.add_parser("conventional", help="conventional predictors and interactions vs success, per position")
+    sub.add_parser("figures", help="write the writeup figures to report/figures")
     sub.add_parser("robustness", help="headline pair: variants, placebos, season benchmark, game movement vs value")
     sub.add_parser("value", help="pre-specified test: WR braking vs hitch separation against man coverage")
     sub.add_parser("usage", help="do drill traits predict route and alignment shares?")
@@ -150,6 +153,11 @@ def main() -> None:
         t.to_csv(args.out / "development_predict.csv", index=False)
         print(t.head(15).round(3).to_string(index=False))
         print(development.retention(s).round(3).to_string(index=False))
+    elif args.cmd == "figures":
+        from . import figures
+
+        for path in figures.build():
+            print(path)
     elif args.cmd == "robustness":
         from . import matched, value
 
@@ -159,7 +167,7 @@ def main() -> None:
         print(t.round(3).to_string(index=False))
         print(t.attrs)
         for name in ("stop-route braking", "40 tracked top speed"):
-            print(name, {k: round(float(v), 3) for k, v in matched.benchmark(name).items()})
+            print(name, matched.benchmark(name))
         g = value.game_movement()
         g.to_csv(args.out / "game_movement.csv", index=False)
         print(g.head(8).round(3).to_string(index=False))

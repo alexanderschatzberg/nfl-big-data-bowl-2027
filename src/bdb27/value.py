@@ -52,21 +52,25 @@ def _outcome(h: pd.DataFrame, y: str, coverage: str | None) -> pd.Series:
     return g.mean().where(g.count() >= MIN_PLAYS[y]).dropna().rename("g")
 
 
-def table(position: str = "WR") -> pd.DataFrame:
+TESTS = [("separation", "MAN_COVERAGE"), ("separation", "ZONE_COVERAGE"), ("target", "MAN_COVERAGE"), ("yac", None)]
+
+
+def frames(position: str = "WR") -> list[tuple]:
+    """(predictor, outcome, coverage, frame) for every test; the first is the primary."""
     h = hitches(position)
     plays = matched.game_plays()
     pair = next(p for p in matched.PAIRS if p.name == "stop-route braking")
     base = matched.pair_frame(pair, plays, min_plays=0).drop(columns="g")
     game = matched.pair_frame(pair, plays).set_index("nfl_id")["g"].rename("c")
     predictors = {"combine braking": base, "game hitch braking": base.drop(columns="c").merge(game, on="nfl_id")}
-    tests = [("separation", "MAN_COVERAGE"), ("separation", "ZONE_COVERAGE"), ("target", "MAN_COVERAGE"),
-             ("yac", None)]
-    rows = []
-    for name, frame in predictors.items():
-        for y, cov in tests:
-            d = frame.merge(_outcome(h, y, cov), on="nfl_id")
-            rows.append({"predictor": name, "outcome": y, "coverage": cov or "any",
-                         "primary": name == "combine braking" and (y, cov) == tests[0]} | matched.test(d))
+    return [(name, y, cov, frame.merge(_outcome(h, y, cov), on="nfl_id"))
+            for name, frame in predictors.items() for y, cov in TESTS]
+
+
+def table(position: str = "WR") -> pd.DataFrame:
+    rows = [{"predictor": name, "outcome": y, "coverage": cov or "any",
+             "primary": name == "combine braking" and (y, cov) == TESTS[0]} | matched.test(d)
+            for name, y, cov, d in frames(position)]
     return pd.DataFrame(rows)
 
 
