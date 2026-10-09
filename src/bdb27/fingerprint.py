@@ -97,7 +97,9 @@ class Domain:
         present = np.zeros((len(players), k), bool)
         for i, pid in enumerate(players):
             idx = index[pid]
-            pick = rng.choice(idx, size=min(k, len(idx)), replace=False)
+            # Always fill all k slots: otherwise how many clips a player has (how much of
+            # the workout they did) is visible to the network and becomes a shortcut.
+            pick = rng.choice(idx, size=k, replace=len(idx) < k)
             x[i, : len(pick)], tok[i, : len(pick)], present[i, : len(pick)] = self.clips[pick], self.token[pick], True
         if augment:  # mirror image of a movement is the same movement
             flip = rng.choice([-1.0, 1.0], size=(len(players), k, 1)).astype(np.float32)
@@ -241,9 +243,9 @@ def train_split_fold(fold: int, seed: int = 0, **overrides) -> dict:
     with torch.no_grad():
         for group, g in test.groupby("group"):
             players, a, b = _halves(combine, g["nfl_id"].tolist())
-            za = model(*combine.sample(players, 64, rng, False, dev, a))
-            zb = model(*combine.sample(players, 64, rng, False, dev, b))
-            zall = model(*combine.sample(players, 64, rng, False, dev))
+            za = model(*combine.sample(players, 16, rng, False, dev, a))
+            zb = model(*combine.sample(players, 16, rng, False, dev, b))
+            zall = model(*combine.sample(players, 16, rng, False, dev))
             sim = (za @ zb.T).cpu().numpy()
             for i, pid in enumerate(players):
                 rows.append({"nfl_id": pid, "group": group, "fold": fold, "seed": seed, "lineup": len(players),
