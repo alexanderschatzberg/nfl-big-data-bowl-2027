@@ -12,8 +12,8 @@ uv run bdb27 prep                      # CSV -> Parquet, Combine features, NFL o
 uv run bdb27 screen                    # cheap trait screens, writes outputs/screen_*.csv
 uv run bdb27 fit --n-perm 200          # transfer + value tests with permutation nulls
 uv run bdb27 fingerprint --folds 0 --steps 300   # local smoke test of the neural model
-uv run modal run modal_app.py --n-perm 2000 --seeds 3   # full run on T4 GPUs (needs a payment method on Modal)
-BDB27_GPU= uv run modal run modal_app.py --n-perm 2000 --seeds 3   # same, CPU only
+uv run modal run modal_app.py::main --n-perm 2000 --seeds 3   # full run on T4 GPUs (needs a payment method on Modal)
+BDB27_GPU= uv run modal run modal_app.py::main --n-perm 2000 --seeds 3   # same, CPU only
 ```
 
 `BDB27_DATA` overrides the data directory (default `./data`; `/vol` on Modal). `data/*` and `outputs/` are gitignored — never commit them, and don't assume they exist in a fresh clone. R is not installed.

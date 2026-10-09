@@ -2,8 +2,9 @@
 
     modal volume create bdb27-data
     modal volume put bdb27-data data/parquet /parquet     # after `bdb27 prep` locally, or upload the CSVs
-    modal run modal_app.py                                 # everything
-    modal run modal_app.py --n-perm 5000 --seeds 5         # the large run
+    modal run modal_app.py::main                           # everything
+    modal run modal_app.py::main --n-perm 5000 --seeds 5   # the large run
+    modal run modal_app.py::signature                      # Combine-only signature network
 
 Raw CSVs can be uploaded to the volume root instead; `prep` converts whatever is missing.
 GPU functions need a payment method on the Modal account; `BDB27_GPU= modal run ...` trains on CPU.
@@ -45,13 +46,31 @@ def train_fold(fold: int, seed: int, overrides: dict) -> dict:
     return fingerprint.train_fold(fold, seed, **overrides)
 
 
-@app.function(image=gpu_image, **common)
-def save_fingerprint(results: list[dict]) -> dict:
+@app.function(image=gpu_image, **train_resources, **common)
+def train_split_fold(fold: int, seed: int, overrides: dict) -> dict:
     from bdb27 import fingerprint
 
-    summary = fingerprint.save(results)
+    return fingerprint.train_split_fold(fold, seed, **overrides)
+
+
+@app.function(image=gpu_image, **common)
+def save_fingerprint(results: list[dict], name: str = "fingerprint") -> dict:
+    from bdb27 import fingerprint
+
+    summary = fingerprint.save(results, name)
     volume.commit()
     return summary
+
+
+@app.local_entrypoint()
+def signature(seeds: int = 3, steps: int = 0):
+    """Combine-only repeatable-movement signature; downloads its out-of-fold embeddings."""
+    overrides = {"steps": steps} if steps else {}
+    results = list(train_split_fold.starmap([(f, s, overrides) for s in range(seeds) for f in range(5)]))
+    print(json.dumps(save_fingerprint.remote(results, "signature"), indent=2))
+    rows = [r for res in results for r in res["rows"]]
+    with open("outputs/signature_rows.json", "w") as f:
+        json.dump(rows, f, default=float)
 
 
 @app.function(image=cpu_image, cpu=2, **common)

@@ -88,13 +88,15 @@ class Domain:
         ids, starts = np.unique(d["nfl_id"][order], return_index=True)
         self.index = dict(zip(ids.tolist(), np.split(order, starts[1:])))
 
-    def sample(self, players, k: int, rng, augment: bool, device):
+    def sample(self, players, k: int, rng, augment: bool, device, index: dict | None = None):
+        """`index` restricts each player to a subset of their clips (default: all)."""
+        index = index or self.index
         t, c = self.clips.shape[1:]
         x = np.zeros((len(players), k, t, c), np.float32)
         tok = np.zeros((len(players), k), np.int64)
         present = np.zeros((len(players), k), bool)
         for i, pid in enumerate(players):
-            idx = self.index[pid]
+            idx = index[pid]
             pick = rng.choice(idx, size=min(k, len(idx)), replace=False)
             x[i, : len(pick)], tok[i, : len(pick)], present[i, : len(pick)] = self.clips[pick], self.token[pick], True
         if augment:  # mirror image of a movement is the same movement
@@ -105,12 +107,20 @@ class Domain:
                 torch.from_numpy(present).to(device))
 
 
-def eligible_players(combine: Domain, game: Domain) -> pd.DataFrame:
+MIN_DRILLS = 4
+
+
+def eligible_players(combine: Domain, game: Domain | None) -> pd.DataFrame:
+    """Players usable for training. With `game=None`, Combine-only (needs several distinct drills)."""
     meta = connect().execute(
         "SELECT nfl_id, cr.draft_year, combine_position, nfl_position FROM combine_results cr JOIN players USING (nfl_id)"
     ).df()
-    ok = [len(combine.index.get(p, ())) >= MIN_COMBINE_CLIPS and len(game.index.get(p, ())) >= MIN_GAME_CLIPS
-          for p in meta["nfl_id"]]
+    if game is None:
+        ok = [p in combine.index and len(np.unique(combine.token[combine.index[p]])) >= MIN_DRILLS
+              for p in meta["nfl_id"]]
+    else:
+        ok = [len(combine.index.get(p, ())) >= MIN_COMBINE_CLIPS and len(game.index.get(p, ())) >= MIN_GAME_CLIPS
+              for p in meta["nfl_id"]]
     meta = meta[ok].reset_index(drop=True)
     # Edge rushers and interior linemen (or tackles and guards) differ in build and
     # role, so a line-up mixing them could be solved without recognising the player.
@@ -171,6 +181,76 @@ def train_fold(fold: int, seed: int = 0, **overrides) -> dict:
             "final_loss": float(np.mean(losses[-50:])), "rows": rows}
 
 
+def _halves(combine: Domain, players, rng=None) -> tuple[list, dict, dict]:
+    """Split the drill vocabulary in two, the same way for every player in the line-up.
+
+    A per-player split would leak: a player's own halves never share a drill, but
+    another player's half can, so drill overlap alone would separate them.
+    Returns the players who have clips on both sides, and their two clip indexes.
+    """
+    drills = np.unique(np.concatenate([combine.token[combine.index[p]] for p in players]))
+    first = (rng.permutation(drills) if rng is not None else drills)[::2]
+    a, b = {}, {}
+    for pid in players:
+        idx = combine.index[pid]
+        mask = np.isin(combine.token[idx], first)
+        if mask.any() and not mask.all():
+            a[pid], b[pid] = idx[mask], idx[~mask]
+    return list(a), a, b
+
+
+def train_split_fold(fold: int, seed: int = 0, **overrides) -> dict:
+    """Combine-only signature: match one half of a player's drills to the other half.
+
+    No game data and no outcome is involved, so whatever this learns is simply
+    the most repeatable way a prospect moves across different drills. Held-out
+    re-identification is a split-half reliability for that learned signature.
+    """
+    cfg = DEFAULTS | overrides
+    torch.manual_seed(seed)
+    rng = np.random.default_rng(seed)
+    dev = device()
+    combine = Domain("combine")
+    meta = eligible_players(combine, None)
+    train, test = meta[meta["fold"] != fold], meta[meta["fold"] == fold]
+    groups = [g["nfl_id"].tolist() for _, g in train.groupby("group") if len(g) >= 4]
+
+    model = SetEncoder(combine.n_tokens, cfg["dim"], cfg["embed"], cfg["dropout"]).to(dev)
+    scale = float(np.log(10.0))
+    opt = torch.optim.AdamW(model.parameters(), lr=cfg["lr"], weight_decay=cfg["weight_decay"])
+    sched = torch.optim.lr_scheduler.OneCycleLR(opt, cfg["lr"], total_steps=cfg["steps"])
+    model.train()
+    losses = []
+    for step in range(cfg["steps"]):
+        players, a, b = _halves(combine, groups[rng.integers(len(groups))], rng)
+        za = model(*combine.sample(players, cfg["k_combine"], rng, True, dev, a))
+        zb = model(*combine.sample(players, cfg["k_combine"], rng, True, dev, b))
+        logits = np.exp(scale) * za @ zb.T
+        target = torch.arange(len(players), device=dev)
+        loss = (F.cross_entropy(logits, target) + F.cross_entropy(logits.T, target)) / 2
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+        sched.step()
+        losses.append(loss.item())
+
+    model.eval()
+    rows = []
+    with torch.no_grad():
+        for group, g in test.groupby("group"):
+            players, a, b = _halves(combine, g["nfl_id"].tolist())
+            za = model(*combine.sample(players, 64, rng, False, dev, a))
+            zb = model(*combine.sample(players, 64, rng, False, dev, b))
+            zall = model(*combine.sample(players, 64, rng, False, dev))
+            sim = (za @ zb.T).cpu().numpy()
+            for i, pid in enumerate(players):
+                rows.append({"nfl_id": pid, "group": group, "fold": fold, "seed": seed, "lineup": len(players),
+                             "rank": int((sim[i] > sim[i, i]).sum()),
+                             **{f"e{j}": v for j, v in enumerate(zall[i].cpu().numpy())}})
+    return {"fold": fold, "seed": seed, "config": cfg, "device": dev,
+            "final_loss": float(np.mean(losses[-50:])), "rows": rows}
+
+
 def summarize(rows: list[dict]) -> dict:
     """Held-out re-identification versus chance, over line-ups of at least three."""
     d = pd.DataFrame(rows)
@@ -188,11 +268,11 @@ def summarize(rows: list[dict]) -> dict:
     }
 
 
-def save(results: list[dict]) -> dict:
+def save(results: list[dict], name: str = "fingerprint") -> dict:
     rows = [r for res in results for r in res["rows"]]
     d = pd.DataFrame(rows)
     emb = [c for c in d if c.startswith("e") and c[1:].isdigit()]
     # Each player's embedding comes only from models that never saw their games.
     d.groupby("nfl_id")[emb].mean().reset_index().to_parquet(
-        artifacts_dir() / "fingerprint_embeddings.parquet", index=False)
+        artifacts_dir() / f"{name}_embeddings.parquet", index=False)
     return summarize(rows)
