@@ -69,3 +69,11 @@ def screen(hyp: Hypothesis) -> pd.DataFrame:
     t["beyond_stopwatch"] = t["r2_from_stopwatch"] <= MAX_STOPWATCH_R2
     t["passes_stage1"] = (t["repeatable"] != "no") & t["beyond_stopwatch"]
     return t
+
+
+def gated_design(hyp: Hypothesis):
+    """Design restricted to traits that pass stage 1. The gate never looks at an outcome."""
+    design = load_design(hyp)
+    passed = set(screen(hyp).query("passes_stage1")["trait"])
+    design.tracking = [c for c in design.tracking if c in passed or c.startswith("nn__")]
+    return design

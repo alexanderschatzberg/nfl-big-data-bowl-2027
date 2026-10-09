@@ -20,6 +20,7 @@ FEATURES = [
     "brk_time_under", "brk_angle",
     "cod_n", "cod_rate", "cod_reacc", "cod_peak_speed",
     "curve_speed", "lat_acc",
+    "cut_radius", "cut_turn_rate", "cut_speed_loss", "cut_exit_gain",
     "f40_vmax", "f40_tau", "f40_a0",
 ]
 
@@ -144,6 +145,15 @@ def attempt_features(t, x, y, s, sprint: bool = False) -> dict | None:
         if turning.sum() >= 3:
             f["curve_speed"] = s[turning].mean()
         f["lat_acc"] = np.percentile((s * omega)[moving], 95)
+        # The sharpest cut: the moving frame with the highest turn rate.
+        f["cut_turn_rate"] = np.degrees(np.percentile(omega[moving], 95))
+        f["cut_radius"] = np.percentile((s / np.maximum(omega, 1e-3))[moving], 5)
+        ic = int(np.argmax(np.where(moving, omega, 0)))
+        if ic - 5 >= 0 and ic + 5 < len(s):
+            v_before = s[ic - 5]
+            floor = s[ic - 5 : ic + 6].min()
+            f["cut_speed_loss"] = (v_before - floor) / v_before if v_before > 0 else np.nan
+            f["cut_exit_gain"] = s[ic + 5] - floor
 
     if sprint:
         f.update(sprint_fit(t, s))

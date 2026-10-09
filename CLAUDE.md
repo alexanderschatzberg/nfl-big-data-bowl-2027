@@ -2,11 +2,40 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## State of the repo
+## Commands
 
-This is a Kaggle NFL Big Data Bowl 2027 entry ("Combine to NFL Performance"). As of the initial commit there is **no code, no environment, and no build/test tooling** — only the competition brief (`instructions.md`) and the raw data in `data/`. `python3` and `uv` are available locally; R is not installed. When adding the first code, also record the chosen run/test commands here.
+```bash
+uv sync --extra nn --extra modal      # torch and modal are optional extras
+uv run pytest                          # all tests
+uv run pytest tests/test_kinematics.py::test_stop_and_go_break_is_measured   # one test
+uv run bdb27 prep                      # CSV -> Parquet, Combine features, NFL outcomes, clip tensors (~1 min)
+uv run bdb27 screen                    # cheap trait screens, writes outputs/screen_*.csv
+uv run bdb27 fit --n-perm 200          # transfer + value tests with permutation nulls
+uv run bdb27 fingerprint --folds 0 --steps 300   # local smoke test of the neural model
+uv run modal run modal_app.py --n-perm 2000 --seeds 3   # full run on T4 GPUs (needs a payment method on Modal)
+BDB27_GPU= uv run modal run modal_app.py --n-perm 2000 --seeds 3   # same, CPU only
+```
 
-`data/*` is gitignored (≈2.3 GB). Never commit it, and don't assume it exists in a fresh clone.
+`BDB27_DATA` overrides the data directory (default `./data`; `/vol` on Modal). `data/*` and `outputs/` are gitignored — never commit them, and don't assume they exist in a fresh clone. R is not installed.
+
+## Architecture
+
+The analysis is one chain tested in three position groups (WR, OL, DL), defined in `src/bdb27/hypotheses.py`. Each stage gates the next:
+
+1. **Trait** — a drill-derived movement trait is repeatable (ICC across attempts/drills) and not predictable from stopwatch numbers. `screen.py`; the gate never looks at an outcome.
+2. **Transfer** — the trait reappears in the same player's game tracking. Tested per trait (`fit`, transfer outcome) and by the neural model (`fingerprint.py`).
+3. **Value** — traits predict context-adjusted results (separation, pressure, get-off) beyond stopwatch + draft slot.
+
+Data flow, all cached under `data/artifacts/`:
+
+- `data.py` converts CSVs to Parquet once and exposes DuckDB views. All large-table work goes through DuckDB.
+- `kinematics.py` turns one 10 Hz trace into per-attempt features (pure numpy; this is what the tests cover). `combine.py` takes the median over attempts and z-scores **within drill × position group × draft class**, because drill setups change between years. Features are combined into `family__feature` columns (mean z across the drills of a family).
+- `outcomes.py` builds play-level "over expected" values with gradient boosting **cross-fitted by player** (a player's plays never train their own expectation), then shrinks player means by empirical-Bayes reliability. Every outcome is oriented so higher is better; the reliability is also the sample weight downstream.
+- `evaluate.py` scores everything out-of-fold with R² measured against the training-fold mean. `SparseIncrement` (baseline ridge + best 3 traits on its residuals, selected inside each fold) is the model the permutation test uses; the null shuffles which player owns which tracking profile.
+- `clips.py` + `fingerprint.py`: a two-tower contrastive network matching a player's set of Combine clips to their set of game clips. Inputs are orientation-free channels (speed, tangential acceleration, turn rate, lateral acceleration). Batches and evaluation line-ups are always **same role (edge / interior DL, tackle / interior OL, CB / S, WR, TE) and draft class**, so the model cannot win on position, body type or season. Out-of-fold embeddings are written to `fingerprint_embeddings.parquet`; when that file exists, `load_design` adds its first 3 principal components as `nn__pc*` traits.
+- `modal_app.py` fans out the five folds × seeds on GPU and the permutation chunks on CPU. `cli.py` holds the functions both it and the local CLI call.
+
+With ~65–80 players per study, adding parameters is costly: a ridge over all traits scores worse than the baseline. Keep trait sets small and any selection inside the cross-validation fold.
 
 ## The deliverable
 
@@ -35,6 +64,8 @@ Everything joins on `nfl_id`. The cohort is 510 players from the 2023–2025 dra
 Things that are not obvious from the headers:
 
 - **Game tracking covers only cohort players, not all 22 on the field.** Most plays have 1–3 tracked players and there is no ball row. Anything needing opponent or ball position (e.g. separation, cushion, pressure) must come from the precomputed columns in `player_play.csv`, not be derived from tracking.
+- **In `combine_tracking.csv`, `a` is an unsigned magnitude and `dis` is not per-frame distance.** Derive signed acceleration from `s` and path length from `x`/`y`. Clips start mid-first-step, not at rest.
+- **`dropback_duration` is empty for defenders and for almost all WR rows** (populated for ~59% of OL rows), so separation cannot be adjusted for time to throw.
 - **Combine tracking has `BALL` rows** (`entity_type`), keyed to the `nfl_id` of the player running the drill. Filter to `entity_type == "PLAYER"` for movement metrics.
 - **Combine tracking has no `o` (orientation) column**; game tracking has both `o` and `dir`.
 - **Drill names are inconsistent across years.** The same drill appears under variants such as `PASS_PRO-MIRROR_DRILL` / `PASS_PRO_MIRROR_DRILL`, `OVER_SHOULDER_ADJUST` / `OVER_THE_SHOULDER_ADJUST`, `SPEED_OUT_LEFT` / `SPEED_OUT_ROUTE_LEFT`, `LINE` / `LINE_DRILL`. Normalize before grouping.

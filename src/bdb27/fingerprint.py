@@ -3,7 +3,7 @@
 One tower reads a set of a player's Combine drill clips, the other a set of the
 same player's post-snap game clips. A symmetric InfoNCE loss pulls a player's
 two embeddings together and pushes other players away. Negatives always come
-from the same position group and draft class, so the network cannot win by
+from the same role (edge vs interior line, etc.) and draft class, so the network cannot win by
 recognising position, body type or season: it has to recognise how the player
 moves. Success is measured only on players held out of training.
 """
@@ -20,6 +20,8 @@ from .data import artifacts_dir, connect
 N_FOLDS = 5
 MIN_COMBINE_CLIPS = 3
 MIN_GAME_CLIPS = 20
+ROLE = {"DE": "EDGE", "OLB": "EDGE", "DT": "IDL", "NT": "IDL", "T": "OT", "G": "IOL", "C": "IOL",
+        "CB": "CB", "SS": "S", "FS": "S", "WR": "WR", "TE": "TE"}
 DEFAULTS = dict(dim=64, embed=32, k_combine=8, k_game=16, steps=1500, lr=2e-3, weight_decay=1e-2,
                 dropout=0.1, eval_game_clips=64, eval_draws=8)
 
@@ -68,7 +70,7 @@ class Fingerprint(nn.Module):
         super().__init__()
         self.combine = SetEncoder(n_drills, dim, embed, dropout)
         self.game = SetEncoder(n_roles, dim, embed, dropout)
-        self.logit_scale = nn.Parameter(torch.tensor(np.log(10.0)))
+        self.logit_scale = nn.Parameter(torch.tensor(float(np.log(10.0))))
 
     def loss(self, zc, zg):
         logits = self.logit_scale.exp().clamp(max=100) * zc @ zg.T
@@ -104,11 +106,16 @@ class Domain:
 
 
 def eligible_players(combine: Domain, game: Domain) -> pd.DataFrame:
-    meta = connect().execute("SELECT nfl_id, draft_year, combine_position FROM combine_results").df()
+    meta = connect().execute(
+        "SELECT nfl_id, cr.draft_year, combine_position, nfl_position FROM combine_results cr JOIN players USING (nfl_id)"
+    ).df()
     ok = [len(combine.index.get(p, ())) >= MIN_COMBINE_CLIPS and len(game.index.get(p, ())) >= MIN_GAME_CLIPS
           for p in meta["nfl_id"]]
     meta = meta[ok].reset_index(drop=True)
-    meta["group"] = meta["combine_position"] + "_" + meta["draft_year"].astype(str)
+    # Edge rushers and interior linemen (or tackles and guards) differ in build and
+    # role, so a line-up mixing them could be solved without recognising the player.
+    meta["role"] = meta["nfl_position"].map(ROLE).fillna(meta["combine_position"])
+    meta["group"] = meta["role"] + "_" + meta["draft_year"].astype(str)
     # Folds are stratified so every held-out line-up contains several same-group peers.
     rng = np.random.default_rng(0)
     meta["fold"] = meta.groupby("group")["nfl_id"].transform(lambda s: rng.permutation(len(s)) % N_FOLDS)
@@ -177,7 +184,7 @@ def summarize(rows: list[dict]) -> dict:
         "top1_rate": float((d["rank"] == 0).mean()),
         "top1_chance": float((1 / d["lineup"]).mean()),
         "p_value": float(stats.wilcoxon(per_player - 0.5, alternative="less").pvalue),
-        "mean_normalized_rank_by_position": by_pos.round(3).to_dict(),
+        "mean_normalized_rank_by_role": by_pos.round(3).to_dict(),
     }
 
 
