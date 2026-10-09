@@ -11,6 +11,7 @@ uv run pytest tests/test_kinematics.py::test_stop_and_go_break_is_measured   # o
 uv run bdb27 prep                      # CSV -> Parquet, Combine features, NFL outcomes, clip tensors (~1 min)
 uv run bdb27 matched                   # matched drill-to-game transfer table (headline analysis)
 uv run bdb27 conventional              # stopwatch predictors + interactions vs success, family-wise p
+uv run bdb27 interactions              # all-pairs interaction scan (~4,600 tests), family-wise p per position
 uv run bdb27 screen                    # cheap trait screens, writes outputs/screen_*.csv
 uv run bdb27 fit --n-perm 200          # transfer + value tests with permutation nulls
 uv run bdb27 fingerprint --folds 0 --steps 300   # local smoke test of the neural model
@@ -39,12 +40,13 @@ Data flow, all cached under `data/artifacts/`:
 - `modal_app.py` fans out the five folds × seeds on GPU and the permutation chunks on CPU. `cli.py` holds the functions both it and the local CLI call.
 
 - `game_features.py` computes the *same* per-clip features on game plays as `kinematics.py` does on drills. `matched.py` pairs each drill family with the game situation it rehearses (e.g. comeback/curl drills ↔ hitch routes) and tests one feature measured identically on both sides, net of 40 time, size and role. This like-for-like design is what found signal; comparing drill traits with loosely related game statistics did not.
-- `conventional.py` tests every standard Combine number (and pre-specified interactions) against success measures per position, with outcomes centred within on-field role and a min-p permutation test over each position's whole family of tests. `career.py` is the pooled 510-player playing-time test.
+- `conventional.py` tests every standard Combine number (and pre-specified interactions) against success measures per position, with outcomes centred within on-field role and a min-p permutation test over each position's whole family of tests. `interactions.py` widens the interaction search to every pair of stopwatch numbers, role and drill traits. `career.py` is the pooled 510-player playing-time test.
 
 Lessons that cost time to learn:
 
 - Body-type measurements proxy for role (long arms → tackle → more pressure faced). Centre outcomes within role before correlating.
 - Game-side capability should be an upper quantile over plays (0.75–0.95), not the median: most plays don't demand the trait.
+- `snaps_per_season` is logged, so its spread is four times wider among late picks than early ones. Any "X matters more for late picks" interaction on it is a scale artefact until it also shows on raw snaps or within pick tiers.
 - Contrastive line-ups leak through anything that differs systematically between a player's own pair and other pairs: role, class, which drills are in each half, and how many clips a player has. `fingerprint.py` guards each of these; keep the guards when changing it.
 
 With ~65–80 players per study, adding parameters is costly: a ridge over all traits scores worse than the baseline. Keep trait sets small and any selection inside the cross-validation fold.

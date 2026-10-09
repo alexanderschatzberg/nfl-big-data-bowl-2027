@@ -91,6 +91,8 @@ def main() -> None:
     sub.add_parser("screen", help="cheap trait screens: repeatability, redundancy, transfer, value")
     sub.add_parser("matched", help="matched drill-to-game transfer table (the headline analysis)")
     sub.add_parser("conventional", help="conventional predictors and interactions vs success, per position")
+    i = sub.add_parser("interactions", help="all-pairs interaction scan with family-wise permutation p")
+    i.add_argument("--n-perm", type=int, default=1000)
     n = sub.add_parser("fingerprint", help="train the contrastive movement-fingerprint network")
     n.add_argument("--folds", nargs="*", type=int, default=list(range(5)))
     n.add_argument("--steps", type=int)
@@ -124,6 +126,22 @@ def main() -> None:
         t = pd.concat(tables)
         t.to_csv(args.out / "conventional.csv", index=False)
         print(t[t["q"] < 0.10].round(3).to_string(index=False))
+    elif args.cmd == "interactions":
+        import numpy as np
+        import pandas as pd
+
+        from . import interactions
+
+        args.out.mkdir(parents=True, exist_ok=True)
+        tables = []
+        for pos in interactions.TRAITS:
+            null = Parallel(n_jobs=-1)(delayed(interactions.min_p_null)(pos, list(range(i, i + 25)))
+                                       for i in range(0, args.n_perm, 25))
+            tables.append(interactions.adjust(interactions.scan(pos), np.vstack(null)))
+        t = pd.concat(tables)
+        t.to_csv(args.out / "interactions.csv", index=False)
+        print(f"{len(t)} tests")
+        print(t.groupby("position").head(6).round(3).to_string(index=False))
     elif args.cmd == "fingerprint":
         run_fingerprint(args.folds, args.steps, args.out)
     else:
