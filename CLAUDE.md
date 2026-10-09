@@ -11,6 +11,7 @@ uv run pytest tests/test_kinematics.py::test_stop_and_go_break_is_measured   # o
 uv run bdb27 prep                      # CSV -> Parquet, Combine features, NFL outcomes, clip tensors (~1 min)
 uv run bdb27 matched                   # matched drill-to-game transfer table (headline analysis)
 uv run bdb27 conventional              # stopwatch predictors + interactions vs success, family-wise p
+uv run bdb27 figures                   # writeup figures -> report/figures (tracked)
 uv run bdb27 robustness                # headline pair: variants, placebos, bootstrap CI, season-to-season benchmark
 uv run bdb27 value                     # pre-specified WR braking vs man-coverage separation test
 uv run bdb27 usage                     # drill traits vs route / alignment shares
@@ -24,7 +25,7 @@ BDB27_GPU= uv run modal run modal_app.py::main --n-perm 2000 --seeds 3   # same,
 uv run modal run modal_app.py::signature --seeds 3   # Combine-only signature network
 ```
 
-`BDB27_DATA` overrides the data directory (default `./data`; `/vol` on Modal). `data/*` and `outputs/` are gitignored — never commit them, and don't assume they exist in a fresh clone. R is not installed.
+`BDB27_DATA` overrides the data directory (default `./data`; `/vol` on Modal). `BDB27_RAW` points at the raw CSVs when they sit somewhere read-only (defaults to `BDB27_DATA`). `data/*` and `outputs/` are gitignored — never commit them, and don't assume they exist in a fresh clone. R is not installed.
 
 ## Architecture
 
@@ -55,6 +56,18 @@ Lessons that cost time to learn:
 - Contrastive line-ups leak through anything that differs systematically between a player's own pair and other pairs: role, class, which drills are in each half, and how many clips a player has. `fingerprint.py` guards each of these; keep the guards when changing it.
 
 With ~65–80 players per study, adding parameters is costly: a ridge over all traits scores worse than the baseline. Keep trait sets small and any selection inside the cross-validation fold.
+
+## The report
+
+`report/` is tracked: `writeup.md` (the submission text), `submission.md` (Kaggle form fields and open items), `notebook.ipynb`, `figures/` and `numbers.json`. `report.py` computes every quoted number and `figures.py` draws from its tables; change a number there, not in the notebook. The notebook is generated output, so re-execute it instead of editing results by hand:
+
+```bash
+uv run python -m ipykernel install --sys-prefix --name bdb27   # once
+uv run jupyter nbconvert --to notebook --execute --ExecutePreprocessor.kernel_name=bdb27 \
+  --ExecutePreprocessor.timeout=3600 report/notebook.ipynb --output notebook.ipynb   # ~10 min from raw CSVs
+```
+
+After a re-run, check `writeup.md` against `report/numbers.json`. Outcome builds are reproducible only because `outcomes.load_plays` sorts its rows and the boosting models are seeded; keep both.
 
 ## The deliverable
 

@@ -62,6 +62,7 @@ def load_plays(position: str) -> pd.DataFrame:
                USING (game_id, play_id, nfl_id)
         WHERE g.season_type = 'REG' AND cr.combine_position = ?
           AND pp.play_nullified_by_penalty = 'N'
+        ORDER BY pp.nfl_id, pp.game_id, pp.play_id  -- a fixed order keeps the cross-fitting folds reproducible
         """,
         [position],
     ).df()
@@ -87,7 +88,8 @@ def over_expected(plays: pd.DataFrame, y: str, num: list[str], cat: list[str], b
             (OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=np.nan), cat),
         )
         model = make_pipeline(enc, Model(max_iter=200, learning_rate=0.05, max_leaf_nodes=15,
-                                         min_samples_leaf=50, categorical_features=cat_idx))
+                                         min_samples_leaf=50, categorical_features=cat_idx,
+                                         random_state=0))
         model.fit(X.iloc[tr], yv[tr])
         exp[te] = model.predict_proba(X.iloc[te])[:, 1] if binary else model.predict(X.iloc[te])
     return pd.Series(yv - exp, index=plays.index)

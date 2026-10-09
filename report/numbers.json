@@ -1,0 +1,803 @@
+{
+ "stopwatch_wr": {
+  "forty->game_speed_p99": {
+   "n": 65,
+   "rho": -0.55,
+   "p": 0.0,
+   "p_family": 0.002
+  },
+  "forty->sep_oe_all": {
+   "n": 64,
+   "rho": -0.18,
+   "p": 0.148,
+   "p_family": 1.0
+  },
+  "forty->targets_per_route": {
+   "n": 64,
+   "rho": -0.12,
+   "p": 0.3261,
+   "p_family": 1.0
+  },
+  "forty->yards_per_route": {
+   "n": 64,
+   "rho": -0.13,
+   "p": 0.3208,
+   "p_family": 1.0
+  },
+  "combine_weight->game_speed_p99": {
+   "n": 70,
+   "rho": -0.4,
+   "p": 0.0005,
+   "p_family": 0.136
+  },
+  "combine_weight->sep_oe_all": {
+   "n": 69,
+   "rho": -0.51,
+   "p": 0.0,
+   "p_family": 0.004
+  },
+  "combine_weight->targets_per_route": {
+   "n": 69,
+   "rho": 0.06,
+   "p": 0.6347,
+   "p_family": 1.0
+  },
+  "combine_weight->yards_per_route": {
+   "n": 69,
+   "rho": 0.02,
+   "p": 0.8877,
+   "p_family": 1.0
+  },
+  "combine_height->game_speed_p99": {
+   "n": 70,
+   "rho": -0.25,
+   "p": 0.0369,
+   "p_family": 0.976
+  },
+  "combine_height->sep_oe_all": {
+   "n": 69,
+   "rho": -0.41,
+   "p": 0.0005,
+   "p_family": 0.135
+  },
+  "combine_height->targets_per_route": {
+   "n": 69,
+   "rho": -0.08,
+   "p": 0.5111,
+   "p_family": 1.0
+  },
+  "combine_height->yards_per_route": {
+   "n": 69,
+   "rho": -0.05,
+   "p": 0.6807,
+   "p_family": 1.0
+  },
+  "log_pick->game_speed_p99": {
+   "n": 70,
+   "rho": -0.2,
+   "p": 0.0984,
+   "p_family": 1.0
+  },
+  "log_pick->sep_oe_all": {
+   "n": 69,
+   "rho": 0.16,
+   "p": 0.1975,
+   "p_family": 1.0
+  },
+  "log_pick->targets_per_route": {
+   "n": 69,
+   "rho": -0.41,
+   "p": 0.0005,
+   "p_family": 0.127
+  },
+  "log_pick->yards_per_route": {
+   "n": 69,
+   "rho": -0.4,
+   "p": 0.0007,
+   "p_family": 0.158
+  }
+ },
+ "stop-route braking": {
+  "n": 54,
+  "rho": 0.48,
+  "partial_rho": 0.49,
+  "partial_p": 0.00018,
+  "partial_q": 0.005,
+  "by_class": {
+   "2023": 0.55,
+   "2024": 0.45,
+   "2025": 0.43
+  },
+  "ci95": [
+   0.215,
+   0.662
+  ],
+  "perm_p": 0.0005
+ },
+ "40 tracked top speed": {
+  "n": 58,
+  "rho": 0.55,
+  "partial_rho": 0.44,
+  "partial_p": 0.00059,
+  "partial_q": 0.009,
+  "by_class": {
+   "2023": 0.38,
+   "2024": 0.68,
+   "2025": 0.6
+  }
+ },
+ "matched_family": {
+  "tests": 29,
+  "survive_q05": [
+   "40 tracked top speed",
+   "stop-route braking"
+  ]
+ },
+ "robustness": {
+  "as specified": 0.49,
+  "game quantile 0.5": 0.15,
+  "game quantile 0.75": 0.33,
+  "game quantile 0.85": 0.45,
+  "game quantile 0.95": 0.31,
+  "min plays 10": 0.41,
+  "min plays 30": 0.49,
+  "min plays 40": 0.49,
+  "feature dec_win10": 0.46,
+  "feature dec_p95": 0.4,
+  "feature dec_max": 0.44,
+  "drill COMEBACK_ROUTE_RIGHT only": 0.33,
+  "drill CURL_ROUTE_RIGHT only": 0.38,
+  "all breaking routes": 0.38,
+  "placebo: go routes in games": 0.04,
+  "placebo: go-route drill": -0.25,
+  "placebo: 40-yard dash": -0.05
+ },
+ "benchmark": {
+  "stop-route braking": {
+   "combine_to_game": 0.48,
+   "combine_ci": [
+    0.24,
+    0.65
+   ],
+   "n": 54,
+   "season_to_next_season": 0.56,
+   "season_ci": [
+    0.3,
+    0.75
+   ],
+   "season_pairs": 47,
+   "season_players": 33
+  },
+  "40 tracked top speed": {
+   "combine_to_game": 0.55,
+   "combine_ci": [
+    0.31,
+    0.72
+   ],
+   "n": 58,
+   "season_to_next_season": 0.67,
+   "season_ci": [
+    0.45,
+    0.82
+   ],
+   "season_pairs": 48,
+   "season_players": 34
+  }
+ },
+ "chain": [
+  {
+   "label": "Stop-drill braking \u2192 braking on hitch routes",
+   "n": 54,
+   "partial_rho": 0.49,
+   "p": 0.0,
+   "ci": [
+    0.21,
+    0.66
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Tracked 40 top speed \u2192 top speed on go routes",
+   "n": 58,
+   "partial_rho": 0.44,
+   "p": 0.001,
+   "ci": [
+    0.13,
+    0.63
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Stop-drill braking \u2192 hitch separation vs man",
+   "n": 41,
+   "partial_rho": 0.07,
+   "p": 0.678,
+   "ci": [
+    -0.29,
+    0.42
+   ],
+   "pre_specified": true
+  },
+  {
+   "label": "Stop-drill braking \u2192 hitch separation vs zone",
+   "n": 61,
+   "partial_rho": -0.18,
+   "p": 0.16,
+   "ci": [
+    -0.43,
+    0.13
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Stop-drill braking \u2192 hitch target rate vs man",
+   "n": 28,
+   "partial_rho": 0.08,
+   "p": 0.7,
+   "ci": [
+    -0.42,
+    0.48
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Stop-drill braking \u2192 yards after catch over expected, hitches",
+   "n": 41,
+   "partial_rho": -0.07,
+   "p": 0.666,
+   "ci": [
+    -0.44,
+    0.28
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Game hitch braking \u2192 hitch separation vs man",
+   "n": 41,
+   "partial_rho": 0.23,
+   "p": 0.146,
+   "ci": [
+    -0.16,
+    0.54
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Game hitch braking \u2192 hitch separation vs zone",
+   "n": 54,
+   "partial_rho": -0.19,
+   "p": 0.172,
+   "ci": [
+    -0.48,
+    0.12
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Game hitch braking \u2192 hitch target rate vs man",
+   "n": 28,
+   "partial_rho": -0.11,
+   "p": 0.568,
+   "ci": [
+    -0.53,
+    0.35
+   ],
+   "pre_specified": false
+  },
+  {
+   "label": "Game hitch braking \u2192 yards after catch over expected, hitches",
+   "n": 41,
+   "partial_rho": -0.29,
+   "p": 0.071,
+   "ci": [
+    -0.65,
+    0.06
+   ],
+   "pre_specified": false
+  }
+ ],
+ "game_movement": {
+  "tests": 64,
+  "q_below_10": 2,
+  "separation_reliability": 0.69,
+  "top": [
+   {
+    "routes": "go",
+    "game_feature": "brk_reacc_10",
+    "outcome": "separation",
+    "n": 17,
+    "partial_rho": 0.74,
+    "p": 0.001,
+    "q": 0.044
+   },
+   {
+    "routes": "all",
+    "game_feature": "dec_win05",
+    "outcome": "separation",
+    "n": 77,
+    "partial_rho": -0.336,
+    "p": 0.003,
+    "q": 0.09
+   },
+   {
+    "routes": "go",
+    "game_feature": "path_eff",
+    "outcome": "yards per route",
+    "n": 56,
+    "partial_rho": -0.337,
+    "p": 0.011,
+    "q": 0.235
+   }
+  ]
+ },
+ "usage": {
+  "tests": 17,
+  "min_partial_q": 0.74
+ },
+ "interactions": {
+  "tests": 4589,
+  "p_family_below_05": 2,
+  "top": [
+   {
+    "position": "OL",
+    "a": "ngs_college_production_score",
+    "b": "log_pick",
+    "outcome": "snaps_per_season",
+    "n": 121,
+    "beta": 0.342,
+    "p_family": 0.016
+   },
+   {
+    "position": "TE",
+    "a": "ngs_athleticism_score",
+    "b": "route__lat_acc",
+    "outcome": "snaps_per_season",
+    "n": 42,
+    "beta": 0.451,
+    "p_family": 0.048
+   },
+   {
+    "position": "WR",
+    "a": "stop__brk_reacc_10",
+    "b": "cut__cut_turn_rate",
+    "outcome": "game_speed_p99",
+    "n": 66,
+    "beta": 0.444,
+    "p_family": 0.143
+   }
+  ]
+ },
+ "development": {
+  "tests": 538,
+  "min_p_family": 0.106,
+  "top": [
+   {
+    "position": "DL",
+    "horizon": "1->3",
+    "measure": "log_snaps",
+    "predictor": "rush__acc_win05",
+    "n": 37,
+    "partial_rho": 0.495,
+    "p": 0.002,
+    "rho_with_change": 0.493,
+    "rho_with_season1": -0.049,
+    "p_family": 0.135
+   },
+   {
+    "position": "OL",
+    "horizon": "1->2",
+    "measure": "log_snaps",
+    "predictor": "log_pick",
+    "n": 83,
+    "partial_rho": -0.328,
+    "p": 0.002,
+    "rho_with_change": 0.114,
+    "rho_with_season1": -0.825,
+    "p_family": 0.158
+   },
+   {
+    "position": "OL",
+    "horizon": "1->2",
+    "measure": "pressure_kept_out",
+    "predictor": "broad_jump",
+    "n": 27,
+    "partial_rho": 0.54,
+    "p": 0.004,
+    "rho_with_change": 0.464,
+    "rho_with_season1": -0.279,
+    "p_family": 0.226
+   }
+  ],
+  "group": [
+   {
+    "position": "WR",
+    "horizon": "1->2",
+    "measure": "yards_per_route",
+    "n": 38,
+    "season1": 0.119,
+    "later": 0.22,
+    "change_sd": 0.164,
+    "improved": 0.526,
+    "p": 0.381,
+    "stability": 0.393
+   },
+   {
+    "position": "WR",
+    "horizon": "1->2",
+    "measure": "targets_per_route",
+    "n": 38,
+    "season1": 0.018,
+    "later": 0.02,
+    "change_sd": 0.044,
+    "improved": 0.5,
+    "p": 0.862,
+    "stability": 0.511
+   },
+   {
+    "position": "WR",
+    "horizon": "1->2",
+    "measure": "separation",
+    "n": 39,
+    "season1": 0.016,
+    "later": -0.009,
+    "change_sd": -0.053,
+    "improved": 0.487,
+    "p": 0.777,
+    "stability": 0.409
+   },
+   {
+    "position": "WR",
+    "horizon": "1->2",
+    "measure": "log_snaps",
+    "n": 70,
+    "season1": 3.957,
+    "later": 3.559,
+    "change_sd": -0.175,
+    "improved": 0.4,
+    "p": 0.326,
+    "stability": 0.722
+   },
+   {
+    "position": "WR",
+    "horizon": "1->2",
+    "measure": "game_speed",
+    "n": 39,
+    "season1": 0.134,
+    "later": 0.004,
+    "change_sd": -0.37,
+    "improved": 0.359,
+    "p": 0.012,
+    "stability": 0.635
+   },
+   {
+    "position": "TE",
+    "horizon": "1->2",
+    "measure": "log_snaps",
+    "n": 25,
+    "season1": 3.505,
+    "later": 3.256,
+    "change_sd": -0.13,
+    "improved": 0.36,
+    "p": 0.355,
+    "stability": 0.841
+   },
+   {
+    "position": "OL",
+    "horizon": "1->2",
+    "measure": "pressure_kept_out",
+    "n": 31,
+    "season1": 0.004,
+    "later": 0.015,
+    "change_sd": 0.457,
+    "improved": 0.613,
+    "p": 0.048,
+    "stability": 0.306
+   },
+   {
+    "position": "OL",
+    "horizon": "1->2",
+    "measure": "log_snaps",
+    "n": 83,
+    "season1": 3.649,
+    "later": 3.529,
+    "change_sd": -0.041,
+    "improved": 0.337,
+    "p": 0.586,
+    "stability": 0.774
+   },
+   {
+    "position": "OL",
+    "horizon": "1->2",
+    "measure": "game_speed",
+    "n": 37,
+    "season1": 0.219,
+    "later": 0.262,
+    "change_sd": 0.093,
+    "improved": 0.595,
+    "p": 0.665,
+    "stability": 0.6
+   },
+   {
+    "position": "DL",
+    "horizon": "1->2",
+    "measure": "pressure_rate",
+    "n": 35,
+    "season1": 0.008,
+    "later": 0.012,
+    "change_sd": 0.115,
+    "improved": 0.6,
+    "p": 0.295,
+    "stability": 0.557
+   },
+   {
+    "position": "DL",
+    "horizon": "1->2",
+    "measure": "get_off",
+    "n": 35,
+    "season1": 0.021,
+    "later": 0.003,
+    "change_sd": -0.252,
+    "improved": 0.4,
+    "p": 0.115,
+    "stability": 0.732
+   },
+   {
+    "position": "DL",
+    "horizon": "1->2",
+    "measure": "log_snaps",
+    "n": 74,
+    "season1": 3.812,
+    "later": 3.95,
+    "change_sd": 0.058,
+    "improved": 0.514,
+    "p": 0.118,
+    "stability": 0.774
+   },
+   {
+    "position": "DL",
+    "horizon": "1->2",
+    "measure": "game_speed",
+    "n": 38,
+    "season1": 0.281,
+    "later": 0.153,
+    "change_sd": -0.327,
+    "improved": 0.289,
+    "p": 0.043,
+    "stability": 0.616
+   },
+   {
+    "position": "DB",
+    "horizon": "1->2",
+    "measure": "log_snaps",
+    "n": 85,
+    "season1": 3.858,
+    "later": 3.73,
+    "change_sd": -0.048,
+    "improved": 0.447,
+    "p": 1.0,
+    "stability": 0.8
+   },
+   {
+    "position": "DB",
+    "horizon": "1->2",
+    "measure": "game_speed",
+    "n": 43,
+    "season1": 0.27,
+    "later": 0.247,
+    "change_sd": -0.061,
+    "improved": 0.558,
+    "p": 0.986,
+    "stability": 0.275
+   },
+   {
+    "position": "WR",
+    "horizon": "1->3",
+    "measure": "yards_per_route",
+    "n": 18,
+    "season1": 0.121,
+    "later": 0.289,
+    "change_sd": 0.266,
+    "improved": 0.5,
+    "p": 0.832,
+    "stability": 0.35
+   },
+   {
+    "position": "WR",
+    "horizon": "1->3",
+    "measure": "targets_per_route",
+    "n": 18,
+    "season1": 0.019,
+    "later": 0.016,
+    "change_sd": -0.058,
+    "improved": 0.667,
+    "p": 0.899,
+    "stability": 0.152
+   },
+   {
+    "position": "WR",
+    "horizon": "1->3",
+    "measure": "separation",
+    "n": 20,
+    "season1": 0.102,
+    "later": -0.054,
+    "change_sd": -0.276,
+    "improved": 0.4,
+    "p": 0.177,
+    "stability": 0.6
+   },
+   {
+    "position": "WR",
+    "horizon": "1->3",
+    "measure": "log_snaps",
+    "n": 39,
+    "season1": 3.956,
+    "later": 3.154,
+    "change_sd": -0.334,
+    "improved": 0.282,
+    "p": 0.045,
+    "stability": 0.621
+   },
+   {
+    "position": "WR",
+    "horizon": "1->3",
+    "measure": "game_speed",
+    "n": 18,
+    "season1": 0.192,
+    "later": 0.068,
+    "change_sd": -0.436,
+    "improved": 0.444,
+    "p": 0.167,
+    "stability": 0.377
+   },
+   {
+    "position": "OL",
+    "horizon": "1->3",
+    "measure": "pressure_kept_out",
+    "n": 15,
+    "season1": 0.006,
+    "later": 0.016,
+    "change_sd": 0.407,
+    "improved": 0.6,
+    "p": 0.229,
+    "stability": -0.114
+   },
+   {
+    "position": "OL",
+    "horizon": "1->3",
+    "measure": "log_snaps",
+    "n": 37,
+    "season1": 3.825,
+    "later": 3.528,
+    "change_sd": -0.099,
+    "improved": 0.297,
+    "p": 0.339,
+    "stability": 0.775
+   },
+   {
+    "position": "OL",
+    "horizon": "1->3",
+    "measure": "game_speed",
+    "n": 18,
+    "season1": 0.212,
+    "later": 0.178,
+    "change_sd": -0.062,
+    "improved": 0.389,
+    "p": 0.702,
+    "stability": 0.598
+   },
+   {
+    "position": "DL",
+    "horizon": "1->3",
+    "measure": "pressure_rate",
+    "n": 15,
+    "season1": 0.006,
+    "later": 0.019,
+    "change_sd": 0.489,
+    "improved": 0.733,
+    "p": 0.073,
+    "stability": 0.668
+   },
+   {
+    "position": "DL",
+    "horizon": "1->3",
+    "measure": "get_off",
+    "n": 15,
+    "season1": 0.022,
+    "later": 0.006,
+    "change_sd": -0.231,
+    "improved": 0.4,
+    "p": 0.303,
+    "stability": 0.429
+   },
+   {
+    "position": "DL",
+    "horizon": "1->3",
+    "measure": "log_snaps",
+    "n": 37,
+    "season1": 3.864,
+    "later": 3.816,
+    "change_sd": -0.021,
+    "improved": 0.514,
+    "p": 0.557,
+    "stability": 0.672
+   },
+   {
+    "position": "DL",
+    "horizon": "1->3",
+    "measure": "game_speed",
+    "n": 17,
+    "season1": 0.398,
+    "later": 0.152,
+    "change_sd": -0.527,
+    "improved": 0.353,
+    "p": 0.051,
+    "stability": 0.426
+   },
+   {
+    "position": "DB",
+    "horizon": "1->3",
+    "measure": "log_snaps",
+    "n": 35,
+    "season1": 3.866,
+    "later": 3.161,
+    "change_sd": -0.282,
+    "improved": 0.286,
+    "p": 0.096,
+    "stability": 0.609
+   },
+   {
+    "position": "DB",
+    "horizon": "1->3",
+    "measure": "game_speed",
+    "n": 15,
+    "season1": 0.156,
+    "later": 0.175,
+    "change_sd": 0.041,
+    "improved": 0.333,
+    "p": 0.72,
+    "stability": 0.725
+   }
+  ],
+  "dl_retention": [
+   {
+    "year": 1,
+    "n": 118,
+    "share_played": 0.797,
+    "z_played": 0.056,
+    "z_did_not": -0.218,
+    "p_played": 0.314,
+    "rho_snaps_among_played": -0.118
+   },
+   {
+    "year": 2,
+    "n": 74,
+    "share_played": 0.757,
+    "z_played": 0.171,
+    "z_did_not": -0.531,
+    "p_played": 0.007,
+    "rho_snaps_among_played": -0.074
+   },
+   {
+    "year": 3,
+    "n": 37,
+    "share_played": 0.73,
+    "z_played": 0.238,
+    "z_did_not": -0.643,
+    "p_played": 0.013,
+    "rho_snaps_among_played": -0.024
+   }
+  ]
+ },
+ "tests": {
+  "conventional": 518,
+  "matched": 29,
+  "interactions": 4589,
+  "usage": 17,
+  "development": 538,
+  "robustness": 17,
+  "value": 8,
+  "game_movement": 64,
+  "development_group": 29,
+  "total": 5809
+ }
+}
