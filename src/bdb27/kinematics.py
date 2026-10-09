@@ -15,6 +15,7 @@ TURN_RATE_MIN = np.deg2rad(30)  # rad/s; frames turning faster than this are "in
 
 FEATURES = [
     "duration", "path_len", "path_eff", "vmax", "acc_max", "dec_max",
+    "dec_p95", "dec_win05", "dec_win10", "dec_rel", "acc_win05", "acc_win10",
     "accel_1to3", "accel_2to5",
     "brk_v_in", "brk_v_min", "brk_dec", "brk_stop_eff", "brk_reacc_05", "brk_reacc_10",
     "brk_time_under", "brk_angle",
@@ -94,6 +95,14 @@ def attempt_features(t, x, y, s, sprint: bool = False) -> dict | None:
     f["vmax"] = s.max()
     f["acc_max"] = acc.max()
     f["dec_max"] = -acc.min()
+    # Sustained braking and acceleration: a single-frame peak is mostly sensor noise.
+    f["dec_p95"] = np.percentile(-acc, 95)
+    for name, lag in (("win05", 5), ("win10", 10)):
+        change = (s[lag:] - s[:-lag]) / (t[lag:] - t[:-lag])
+        f[f"dec_{name}"] = -change.min()
+        f[f"acc_{name}"] = change.max()
+    i = int(np.argmin(s[5:] - s[:-5]))
+    f["dec_rel"] = (s[i] - s[i + 5]) / s[i] if s[i] > 1.0 else np.nan
     f["accel_1to3"] = _ramp_accel(t, s, 1.0, 3.0)
     f["accel_2to5"] = _ramp_accel(t, s, 2.0, 5.0)
 

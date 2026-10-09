@@ -75,5 +75,5 @@ def gated_design(hyp: Hypothesis):
     """Design restricted to traits that pass stage 1. The gate never looks at an outcome."""
     design = load_design(hyp)
     passed = set(screen(hyp).query("passes_stage1")["trait"])
-    design.tracking = [c for c in design.tracking if c in passed or c.startswith("nn__")]
+    design.tracking = [c for c in design.tracking if c in passed]
     return design

@@ -9,14 +9,12 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
-from sklearn.decomposition import PCA
 
 from .combine import family_features
 from .data import artifacts_dir, connect
 
 STOPWATCH = ["combine_height", "combine_weight", "forty", "ten_yd_split", "vertical", "broad_jump"]
 UNDRAFTED_PICK = 260
-N_FINGERPRINT_PCS = 3
 
 
 @dataclass(frozen=True)
@@ -102,12 +100,4 @@ def load_design(hyp: Hypothesis) -> Design:
     outcomes = pd.read_parquet(artifacts_dir() / f"outcomes_{hyp.position}.parquet")
     df = pd.concat([meta, dummies], axis=1).merge(track, on="nfl_id", how="left").merge(outcomes, on="nfl_id", how="left")
     tracking = [c for c in track.columns if c != "nfl_id"]
-    emb_path = artifacts_dir() / "fingerprint_embeddings.parquet"
-    if emb_path.exists():  # learned movement fingerprint, reduced to a few axes for this position
-        emb = pd.read_parquet(emb_path).merge(df[["nfl_id"]], on="nfl_id")
-        if len(emb) > N_FINGERPRINT_PCS:
-            pcs = PCA(N_FINGERPRINT_PCS).fit_transform(emb.drop(columns="nfl_id"))
-            names = [f"nn__pc{i + 1}" for i in range(N_FINGERPRINT_PCS)]
-            df = df.merge(pd.DataFrame(pcs, columns=names).assign(nfl_id=emb["nfl_id"].values), on="nfl_id", how="left")
-            tracking += names
     return Design(df, STOPWATCH + list(dummies.columns), ["log_pick"], tracking)

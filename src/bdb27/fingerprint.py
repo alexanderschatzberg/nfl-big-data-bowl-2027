@@ -212,7 +212,9 @@ def train_split_fold(fold: int, seed: int = 0, **overrides) -> dict:
     dev = device()
     combine = Domain("combine")
     meta = eligible_players(combine, None)
-    train, test = meta[meta["fold"] != fold], meta[meta["fold"] == fold]
+    # fold < 0: train on everyone and embed everyone. That is legitimate here because
+    # no outcome enters training, and it puts all players in one embedding space.
+    train, test = (meta, meta) if fold < 0 else (meta[meta["fold"] != fold], meta[meta["fold"] == fold])
     groups = [g["nfl_id"].tolist() for _, g in train.groupby("group") if len(g) >= 4]
 
     model = SetEncoder(combine.n_tokens, cfg["dim"], cfg["embed"], cfg["dropout"]).to(dev)
@@ -269,10 +271,14 @@ def summarize(rows: list[dict]) -> dict:
 
 
 def save(results: list[dict], name: str = "fingerprint") -> dict:
-    rows = [r for res in results for r in res["rows"]]
-    d = pd.DataFrame(rows)
+    """Summarise held-out re-identification. Embeddings from different models live in
+    different coordinate systems, so they are never pooled across folds or seeds."""
+    return summarize([r for res in results for r in res["rows"]])
+
+
+def embeddings(result: dict) -> pd.DataFrame:
+    """One model's embeddings, centred within role so position does not dominate."""
+    d = pd.DataFrame(result["rows"])
     emb = [c for c in d if c.startswith("e") and c[1:].isdigit()]
-    # Each player's embedding comes only from models that never saw their games.
-    d.groupby("nfl_id")[emb].mean().reset_index().to_parquet(
-        artifacts_dir() / f"{name}_embeddings.parquet", index=False)
-    return summarize(rows)
+    d[emb] = d[emb] - d.groupby(d["group"].str.split("_").str[0])[emb].transform("mean")
+    return d[["nfl_id"] + emb]
