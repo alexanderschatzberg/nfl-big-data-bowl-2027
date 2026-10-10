@@ -93,7 +93,8 @@ def _row(t: pd.DataFrame, **where) -> pd.Series:
 
 
 def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_table: pd.DataFrame,
-            group: pd.DataFrame, retention: pd.DataFrame, game_movement: pd.DataFrame) -> dict:
+            group: pd.DataFrame, retention: pd.DataFrame, game_movement: pd.DataFrame,
+            coverage: pd.DataFrame) -> dict:
     """The quoted values, rounded as the writeup prints them."""
     sw, mt, it, us, dv = (tables[k] for k in ("conventional", "matched", "interactions", "usage", "development"))
     wr = sw[(sw["position"] == "WR") & (sw["kind"] == "main")]
@@ -121,6 +122,9 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
     out["game_movement"] = {"tests": len(game_movement), "q_below_10": int((game_movement["q"] < 0.10).sum()),
                             "separation_reliability": round(float(game_movement.attrs["separation_reliability"]), 2),
                             "top": game_movement.head(3).round(3).to_dict("records")}
+    out["coverage_profile"] = {"tests": len(coverage), "max_abs_partial": round(float(coverage["partial_rho"].abs().max()), 2),
+                               "min_q": round(float(coverage["q"].min()), 2),
+                               **{k: round(v, 2) if isinstance(v, float) else v for k, v in coverage.attrs.items()}}
     out["usage"] = {"tests": len(us), "min_partial_q": round(float(us["partial_q"].min()), 2)}
     out["interactions"] = {"tests": len(it), "p_family_below_05": int((it["p_family"] < 0.05).sum()),
                            "top": it.sort_values("p_family").head(3)[["position", "a", "b", "outcome", "n", "beta", "p_family"]]
@@ -129,7 +133,8 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
                           "top": dv.sort_values("p").head(3).round(3).to_dict("records"),
                           "group": group.round(3).to_dict("records"), "dl_retention": retention.round(3).to_dict("records")}
     out["tests"] = test_count(tables | {"robustness": robustness, "value": chain_table.iloc[2:],
-                                        "game_movement": game_movement, "development_group": group})
+                                        "game_movement": game_movement, "coverage_profile": coverage,
+                                        "development_group": group})
     return out
 
 

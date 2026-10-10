@@ -134,3 +134,66 @@ def game_movement(position: str = "WR", quantile: float = 0.9, min_plays: int = 
     r = float(np.mean(halves))
     t.attrs["separation_reliability"] = 2 * r / (1 + r)
     return t.sort_values("p")
+
+
+COVERAGES = {"Man (all)": "mz == 'MAN_COVERAGE'", "Zone (all)": "mz == 'ZONE_COVERAGE'",
+             "Cover 1": "ctype == 'COVER_1_MAN'", "Cover 2": "ctype == 'COVER_2_ZONE'",
+             "Cover 3": "ctype == 'COVER_3_ZONE'", "Cover 4 or 6": "ctype in ['COVER_4_ZONE', 'COVER_6_ZONE']"}
+PROFILE = {"braking": (matched._STOP, "dec_win05"), "top speed": (["FORTY_YARD_DASH"], "vmax")}
+
+
+def coverage_profile(position: str = "WR", min_plays: int = 25) -> pd.DataFrame:
+    """Exploratory: do the two Combine traits that transfer relate to separation against particular coverages?
+
+    Separation is adjusted for route and cushion at play level. Partial correlations
+    remove weight, height and alignment. `attrs` holds how related the two traits
+    are to each other, and how related a receiver's man and zone separation are.
+    """
+    from scipy import stats
+
+    from . import evaluate
+
+    con = connect()
+    pl = con.execute(
+        """
+        SELECT pp.nfl_id, pp.route_ran AS route, pp.team_coverage_type AS ctype, pp.team_coverage_man_zone AS mz,
+               pp.separation_at_pass_forward AS sep, pp.cushion, pp.lined_up_position AS lined_up
+        FROM player_play pp JOIN games g USING (game_id) JOIN combine_results cr USING (nfl_id)
+        WHERE g.season_type = 'REG' AND pp.play_nullified_by_penalty = 'N' AND cr.combine_position = ?
+          AND pp.route_ran IS NOT NULL AND pp.separation_at_pass_forward IS NOT NULL
+        ORDER BY pp.game_id, pp.play_id, pp.nfl_id
+        """,
+        [position],
+    ).df()
+    pl["cushion"] = pl["cushion"].fillna(pl["cushion"].median())
+    pl["sep"] -= pl.groupby("route")["sep"].transform("mean")
+    pl["sep"] -= np.polyval(np.polyfit(pl["cushion"], pl["sep"], 1), pl["cushion"])
+    drills = pd.read_parquet(artifacts_dir() / "combine_player_drill.parquet")
+    drills = drills[drills["combine_position"] == position]
+    traits = pd.concat([drills[drills["drill"].isin(d)].groupby("nfl_id")[f].mean().rename(name)
+                        for name, (d, f) in PROFILE.items()], axis=1)
+    size = ["combine_weight", "combine_height"]
+    meta = con.execute(f"SELECT nfl_id, {', '.join(size)} FROM combine_results").df().set_index("nfl_id")
+    role = pl.groupby("nfl_id")["lined_up"].agg(lambda s: s.mode().iat[0]).rename("role")
+
+    def player_mean(where: str) -> pd.Series:
+        g = pl.query(where).groupby("nfl_id")["sep"]
+        return g.mean().where(g.count() >= min_plays).dropna()
+
+    rows = []
+    for coverage, where in COVERAGES.items():
+        y = player_mean(where).rename("y")
+        for trait in traits:
+            d = pd.concat([traits[trait].rename("x"), y, meta, role], axis=1).dropna(subset=["x", "y"])
+            Z = np.column_stack([d[size].fillna(d[size].median()).to_numpy(float),
+                                 pd.get_dummies(d["role"], drop_first=True, dtype=float).to_numpy()])
+            rho, p = stats.spearmanr(evaluate._residualize(d["x"].to_numpy(float), Z),
+                                     evaluate._residualize(d["y"].to_numpy(float), Z))
+            rows.append({"coverage": coverage, "trait": trait, "n": len(d), "partial_rho": rho, "p": p})
+    t = pd.DataFrame(rows)
+    t["q"] = stats.false_discovery_control(t["p"], method="bh")
+    both = traits.dropna()
+    mz = pd.concat([player_mean(COVERAGES["Man (all)"]), player_mean(COVERAGES["Zone (all)"])], axis=1).dropna()
+    t.attrs = {"traits_rho": float(stats.spearmanr(both.iloc[:, 0], both.iloc[:, 1])[0]), "traits_n": len(both),
+               "man_zone_rho": float(stats.spearmanr(mz.iloc[:, 0], mz.iloc[:, 1])[0]), "man_zone_n": len(mz)}
+    return t
