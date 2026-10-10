@@ -28,7 +28,7 @@
    "n": 70,
    "rho": -0.4,
    "p": 0.0005,
-   "p_family": 0.134
+   "p_family": 0.135
   },
   "combine_weight->sep_oe_all": {
    "n": 69,
@@ -52,13 +52,13 @@
    "n": 70,
    "rho": -0.25,
    "p": 0.0369,
-   "p_family": 0.977
+   "p_family": 0.978
   },
   "combine_height->sep_oe_all": {
    "n": 69,
    "rho": -0.41,
    "p": 0.0005,
-   "p_family": 0.133
+   "p_family": 0.134
   },
   "combine_height->targets_per_route": {
    "n": 69,
@@ -88,7 +88,7 @@
    "n": 69,
    "rho": -0.41,
    "p": 0.0005,
-   "p_family": 0.125
+   "p_family": 0.128
   },
   "log_pick->yards_per_route": {
    "n": 69,
@@ -330,6 +330,15 @@
    }
   ]
  },
+ "coverage_profile": {
+  "tests": 12,
+  "max_abs_partial": 0.15,
+  "min_q": 0.92,
+  "traits_rho": -0.1,
+  "traits_n": 91,
+  "man_zone_rho": 0.41,
+  "man_zone_n": 63
+ },
  "usage": {
   "tests": 17,
   "min_partial_q": 0.74
@@ -363,7 +372,7 @@
     "outcome": "game_speed_p99",
     "n": 66,
     "beta": 0.444,
-    "p_family": 0.141
+    "p_family": 0.142
    }
   ]
  },
@@ -797,7 +806,8 @@
   "robustness": 17,
   "value": 8,
   "game_movement": 64,
+  "coverage_profile": 12,
   "development_group": 29,
-  "total": 5809
+  "total": 5821
  }
 }
