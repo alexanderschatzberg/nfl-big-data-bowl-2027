@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| **Title** (≤ 80) | Brakes Travel, Separation Doesn't Follow |
-| **Subtitle** (≤ 140) | Combine tracking predicts how NFL receivers brake almost as well as a season of game data. Braking still doesn't buy separation. |
+| **Title** (≤ 80) | How Well Do Combine Drills Predict the Way Receivers Move in NFL Games? |
+| **Subtitle** (≤ 140) | Braking in the comeback and curl drills carries over to hitch routes in games, and it does not predict separation. |
 | **Card and thumbnail image** | `report/figures/card_560x280.png` (560 × 280) |
 | **Submission track** | University track |
 | **Project description** | Paste `report/writeup.md` |

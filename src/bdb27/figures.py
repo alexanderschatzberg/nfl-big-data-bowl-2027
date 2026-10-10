@@ -53,7 +53,7 @@ def stopwatch(frame: pd.DataFrame) -> plt.Figure:
         ax.set_ylabel(f"vs alignment average ({units[col]})")
         ax.text(0.97, 0.96, f"ρ = {rho:+.2f}\nn = {len(d)}".replace("-", "−"), transform=ax.transAxes, ha="right", va="top", fontsize=10,
                 fontweight="bold" if p < 0.05 else "normal")
-    _title(fig, "The 40 predicts how fast a receiver plays, and little else",
+    _title(fig, "40-yard dash time and four game outcomes for wide receivers",
            "Wide receivers, 2023–25 draft classes. Each dot is a player; outcomes are regular-season values relative to "
            "slot or outside receivers. ρ is the rank correlation.")
     fig.tight_layout(rect=(0, 0, 1, 0.84))
@@ -74,7 +74,7 @@ def transfer_scatter(d: pd.DataFrame, numbers: dict) -> plt.Figure:
     h = numbers[report.HEADLINE]
     ax.text(0.03, 0.97, f"ρ = {h['rho']:.2f}\n{h['partial_rho']:.2f} after removing 40 time,\nsize and alignment",
             transform=ax.transAxes, va="top", fontsize=10)
-    _title(fig, "Receivers who brake hard in Indianapolis brake hard on Sundays",
+    _title(fig, "Braking in Combine drills and braking in NFL games",
            f"{h['n']} wide receivers with both drills and at least 20 regular-season hitch routes.", top=0.985)
     fig.tight_layout(rect=(0, 0, 1, 0.86))
     return fig
@@ -105,7 +105,7 @@ def benchmark(benchmarks: dict) -> plt.Figure:
     ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8])
     ax.set_xlabel("Rank correlation with game movement (line = 95% bootstrap interval)", loc="left")
     ax.grid(axis="y", visible=False)
-    _title(fig, "A Combine drill tells you nearly as much as a season of NFL tracking",
+    _title(fig, "Predicting game movement from the Combine and from the previous season",
            "How well each source predicts a receiver's in-game movement capability: his Combine drill, or the same "
            "game measure from his own previous season.", top=0.975)
     fig.tight_layout(rect=(0, 0, 1, 0.8))
@@ -127,9 +127,9 @@ ROBUST_LABELS = {
     "drill COMEBACK_ROUTE_RIGHT only": ("Which drill", "Comeback drill only"),
     "drill CURL_ROUTE_RIGHT only": ("Which drill", "Curl drill only"),
     "all breaking routes": ("Which game routes", "All breaking routes"),
-    "placebo: go routes in games": ("Placebos (should be zero)", "Stop drills → braking on go routes"),
-    "placebo: go-route drill": ("Placebos (should be zero)", "Go-route drill → hitch braking"),
-    "placebo: 40-yard dash": ("Placebos (should be zero)", "40-yard dash → hitch braking"),
+    "placebo: go routes in games": ("Placebos (should be zero)", "Stop drills and braking on go routes"),
+    "placebo: go-route drill": ("Placebos (should be zero)", "Go-route drill and hitch braking"),
+    "placebo: 40-yard dash": ("Placebos (should be zero)", "40-yard dash and hitch braking"),
 }
 
 
@@ -161,7 +161,7 @@ def robustness(table: pd.DataFrame) -> plt.Figure:
         if t.get_position()[0] == -0.985:
             t.set_transform(ax.get_yaxis_transform())
             t.set_x(-0.62)
-    _title(fig, "The braking result holds however it is cut, and the placebos stay at zero",
+    _title(fig, "The braking result under different analysis choices",
            "Shaded band: 95% bootstrap interval of the main result. Blue circles are variations of the test; "
            "orange diamonds pair drills and plays that should not match.", top=0.985)
     fig.tight_layout(rect=(0, 0, 1, 0.89))
@@ -180,10 +180,10 @@ def chain(table: pd.DataFrame) -> plt.Figure:
             y += 0.85
             last = r["stage"]
         solid = r["lo"] > 0 or r["hi"] < 0
-        color = BLUE if r["stage"].startswith("Transfer") else GREY
+        color = BLUE if r["stage"].startswith("Drill movement") else GREY
         ax.plot([r["lo"], r["hi"]], [y, y], color=color, lw=2, zorder=3, solid_capstyle="round")
         ax.scatter(r["partial_rho"], y, s=64, color=color if solid else SURFACE, edgecolor=color, linewidth=2, zorder=4)
-        label = r["label"].split(" → ")[-1] if not r["stage"].startswith("Transfer") else r["label"]
+        label = r["label"].split(": ")[-1] if not r["stage"].startswith("Drill movement") else r["label"]
         label = label[0].upper() + label[1:] + ("  (pre-specified test)" if r["pre_specified"] else "")
         ax.text(0.98, y, f"{r['partial_rho']:+.2f}".replace("-", "−"), va="center", ha="right", fontsize=9.5, fontweight="bold")
         ax.text(1.04, y, f"n = {r['n']}", va="center", ha="left", fontsize=9, color=MUTED)
@@ -195,9 +195,9 @@ def chain(table: pd.DataFrame) -> plt.Figure:
     ax.set_xticks([-0.5, 0, 0.5])
     ax.set_xlabel("Correlation net of 40 time, size and alignment\n(line = 95% bootstrap interval)", loc="left")
     ax.grid(axis="y", visible=False)
-    _title(fig, "The movement transfers. It does not buy separation.",
-           "Wide receivers. Filled dots: interval excludes zero. Braking predicts braking, but neither drill braking "
-           "nor game braking predicts results on hitch routes.", top=0.985)
+    _title(fig, "Braking carries over to games and is unrelated to results on hitch routes",
+           "Wide receivers. A filled dot means the interval excludes zero. Each row is a correlation between the two "
+           "things named.", top=0.985)
     fig.tight_layout(rect=(0, 0, 1, 0.89))
     return fig
 
@@ -213,8 +213,8 @@ def card(d: pd.DataFrame, numbers: dict) -> plt.Figure:
     ax.set_yticks([])
     ax.set_xlabel("Combine drill braking", fontsize=8)
     ax.set_ylabel("Game braking", fontsize=8)
-    fig.text(0.04, 0.86, "Brakes travel.", fontsize=19, fontweight="bold", va="top")
-    fig.text(0.04, 0.62, "Separation\ndoesn't follow.", fontsize=15, va="top", color=MUTED)
+    fig.text(0.04, 0.86, "Receiver braking", fontsize=19, fontweight="bold", va="top")
+    fig.text(0.04, 0.62, "Combine drills and\nNFL games", fontsize=15, va="top", color=MUTED)
     fig.text(0.04, 0.16, f"ρ = {numbers[report.HEADLINE]['rho']:.2f}  ·  {numbers[report.HEADLINE]['n']} receivers",
              fontsize=9, color=MUTED)
     return fig

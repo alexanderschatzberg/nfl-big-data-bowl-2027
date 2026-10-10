@@ -57,16 +57,16 @@ def chain(n_boot: int = 2000) -> pd.DataFrame:
         rows.append({"stage": stage, "label": label, "n": t["n"], "partial_rho": t["partial_rho"],
                      "p": t["partial_p"], "lo": lo, "hi": hi, "pre_specified": primary})
 
-    transfer = {HEADLINE: "Stop-drill braking → braking on hitch routes",
-                SPEED: "Tracked 40 top speed → top speed on go routes"}
+    transfer = {HEADLINE: "Stop-drill braking and braking on hitch routes",
+                SPEED: "Tracked 40 top speed and top speed on go routes"}
     for name, label in transfer.items():
-        add("Transfer: drill to game movement", label, matched.pair_frame(next(p for p in matched.PAIRS if p.name == name), plays))
+        add("Drill movement and game movement", label, matched.pair_frame(next(p for p in matched.PAIRS if p.name == name), plays))
     outcome = {("separation", "MAN_COVERAGE"): "hitch separation vs man", ("separation", "ZONE_COVERAGE"): "hitch separation vs zone",
                ("target", "MAN_COVERAGE"): "hitch target rate vs man", ("yac", None): "yards after catch over expected, hitches"}
-    stage = {"combine braking": ("Value: drill braking to results", "Stop-drill braking"),
-             "game hitch braking": ("Value: game braking to results", "Game hitch braking")}
+    stage = {"combine braking": ("Drill braking and results on hitch routes", "Stop-drill braking"),
+             "game hitch braking": ("Game braking and results on hitch routes", "Game hitch braking")}
     for i, (pred, y, cov, d) in enumerate(value.frames()):
-        add(stage[pred][0], f"{stage[pred][1]} → {outcome[(y, cov)]}", d, primary=i == 0)
+        add(stage[pred][0], f"{stage[pred][1]}: {outcome[(y, cov)]}", d, primary=i == 0)
     return pd.DataFrame(rows)
 
 
