@@ -96,7 +96,7 @@ def figure(d: dict) -> plt.Figure:
             ax.plot(c["t"][keep], c["s"][keep], color=color, lw=1.8, zorder=3)
             ax.plot(c["t"][i:j + 1], c["s"][i:j + 1], color=color, lw=7, solid_capstyle="butt", zorder=4)
             # Hard braker labelled under the speed hump, soft braker in the empty top corner.
-            x, y, ha = (1.55, 2.6, "center") if kind == "hard" else (SHOWN, 9.5, "right")
+            x, y, ha = (1.85, 2.3, "center") if kind == "hard" else (SHOWN, 9.5, "right")
             ax.text(x, y, f"{d[kind]['name']}\n{c['value']:.1f}", color=color, fontsize=11.5, fontweight="bold",
                     va="top", ha=ha, linespacing=1.15)
         ax.set_title(title, fontsize=12)
