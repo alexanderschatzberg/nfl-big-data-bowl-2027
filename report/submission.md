@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| **Title** (≤ 80) | How Well Do Combine Drills Predict the Way Receivers Move in NFL Games? |
-| **Subtitle** (≤ 140) | Braking in the comeback and curl drills carries over to hitch routes in games, and it does not predict separation. |
+| **Title** (≤ 80) | Predicting How Receivers Move: Combine Drills Against a Season of NFL Tracking |
+| **Subtitle** (≤ 140) | Two Combine drills predict how hard a receiver brakes in NFL games at 0.42; a full season of his own NFL tracking predicts it at 0.56. |
 | **Card and thumbnail image** | `report/figures/card_560x280.png` (560 × 280) |
 | **Submission track** | University track |
 | **Project description** | Paste `report/writeup.md` |
@@ -11,17 +11,18 @@
 
 ## Media gallery
 
-Upload in this order (the writeup refers to them as Figures 1–5):
+Upload in this order (file names are unchanged; the benchmark is the lead claim, so it goes first):
 
-1. `report/figures/fig2_braking_transfer.png` (lead image: the headline result)
-2. `report/figures/fig3_benchmark.png`
-3. `report/figures/fig5_chain.png`
-4. `report/figures/fig1_stopwatch.png`
-5. `report/figures/fig4_robustness.png`
+1. `report/figures/fig3_benchmark.png` (lead image: the Combine compared with a season of NFL tracking)
+2. `report/figures/fig6_traces.png`
+3. `report/figures/fig2_braking_transfer.png`
+4. `report/figures/fig5_chain.png`
+5. `report/figures/fig1_stopwatch.png`
+6. `report/figures/fig4_robustness.png`
 
 ## Images inside the description
 
-`writeup.md` embeds the five figures with relative paths (`figures/fig1_stopwatch.png` …). Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 5 figures + 1 table (limit: fewer than 10).
+`writeup.md` embeds the six figures with relative paths, in the order fig6, fig3, fig2, fig4, fig1, fig5. Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 6 figures + 2 tables (limit: fewer than 10). The text is 1,964 words, not counting table borders and image tags (limit: 2,000).
 
 ## Attachments
 
@@ -32,7 +33,7 @@ Upload in this order (the writeup refers to them as Figures 1–5):
 
 ## Before the notebook will run on Kaggle
 
-1. The first cell installs the package with `pip install git+https://github.com/alexanderschatzberg/nfl-big-data-bowl-2027@main`, which is pushed.
+1. The first cell installs the package with `pip install git+https://github.com/alexanderschatzberg/nfl-big-data-bowl-2027@main`, so the latest commits on `main` must be pushed before running there.
 2. In the Kaggle notebook: **add the competition data** as an input and turn **Internet on** (needed for the pip install). If the competition forbids Internet in notebooks, attach the repository as a Kaggle Dataset instead; the first cell looks for `/kaggle/input/*/src/bdb27` and uses it without installing.
 3. Run all. Parquet files and artifacts are written to `/kaggle/working/bdb27` (about 0.5 GB), figures to `/kaggle/working/figures`.
 

@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-from . import evaluate
+from . import combine, evaluate
 from .data import artifacts_dir, connect
 
 SIZE_SPEED = ["forty", "combine_weight", "combine_height"]
@@ -109,7 +109,9 @@ def pair_frame(pair: Pair, plays: pd.DataFrame, **overrides) -> pd.DataFrame:
     q = overrides.get("quantile", pair.quantile)
     min_plays = overrides.get("min_plays", pair.min_plays)
     feature = overrides.get("feature", pair.feature)
-    drills = pd.read_parquet(artifacts_dir() / "combine_player_drill.parquet")
+    drills = overrides.get("player_drill")
+    if drills is None:
+        drills = pd.read_parquet(artifacts_dir() / "combine_player_drill.parquet")
     drills = drills[drills["drill"].isin(overrides.get("drills", pair.drills)) & (drills["combine_position"] == pair.position)]
     c = drills.groupby("nfl_id")[feature].mean().rename("c")
     sub = plays[plays["position"] == pair.position].query(overrides.get("where", pair.plays))
@@ -150,7 +152,9 @@ def robustness(name: str = "stop-route braking", n_boot: int = 2000) -> pd.DataF
     variants |= {f"min plays {m}": {"min_plays": m} for m in (10, 30, 40)}
     variants |= {f"feature {f}": {"feature": f} for f in ("dec_win10", "dec_p95", "dec_max") if f != pair.feature}
     variants |= {f"drill {d} only": {"drills": [d]} for d in pair.drills}
-    variants |= {"all breaking routes": {"where": f"route_ran in {list(BREAKING)}"},
+    uncut = combine.build_player_drill(pd.read_parquet(artifacts_dir() / "combine_attempts.parquet"), min_duration=0)
+    variants |= {"keeping cut-off drill clips": {"player_drill": uncut},
+                 "all breaking routes": {"where": f"route_ran in {list(BREAKING)}"},
                  "placebo: go routes in games": {"where": "route_ran == 'GO'"},
                  "placebo: go-route drill": {"drills": ["GO_ROUTE_RIGHT"]},
                  "placebo: 40-yard dash": {"drills": ["FORTY_YARD_DASH"]}}

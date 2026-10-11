@@ -49,6 +49,7 @@ Data flow, all cached under `data/artifacts/`:
 
 Lessons that cost time to learn:
 
+- Some Combine clips are cut off before the drill ends (a 3-second curl that stops at top speed scores as no braking). `combine.build_player_drill` drops clips shorter than 65% of the drill-by-class median; five such clips had inflated the headline correlation from 0.42 to 0.48.
 - Body-type measurements proxy for role (long arms → tackle → more pressure faced). Centre outcomes within role before correlating.
 - Game-side capability should be an upper quantile over plays (0.75–0.95), not the median: most plays don't demand the trait.
 - `snaps_per_season` is logged, so its spread is four times wider among late picks than early ones. Any "X matters more for late picks" interaction on it is a scale artefact until it also shows on raw snaps or within pick tiers.

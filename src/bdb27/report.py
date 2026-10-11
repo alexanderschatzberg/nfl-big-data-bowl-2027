@@ -15,7 +15,7 @@ from . import conventional, development, interactions, matched, usage, value
 
 HEADLINE = "stop-route braking"
 SPEED = "40 tracked top speed"
-STOPWATCH_OUTCOMES = {"game_speed_p99": "Game top speed", "sep_oe_all": "Separation over expected",
+STOPWATCH_OUTCOMES = {"game_speed_p99": "Top speed in games", "sep_oe_all": "Separation from the defender",
                       "targets_per_route": "Targets per route", "yards_per_route": "Yards per route"}
 
 
@@ -57,13 +57,13 @@ def chain(n_boot: int = 2000) -> pd.DataFrame:
         rows.append({"stage": stage, "label": label, "n": t["n"], "partial_rho": t["partial_rho"],
                      "p": t["partial_p"], "lo": lo, "hi": hi, "pre_specified": primary})
 
-    transfer = {HEADLINE: "Stop-drill braking and braking on hitch routes",
-                SPEED: "Tracked 40 top speed and top speed on go routes"}
+    transfer = {HEADLINE: "Braking in the comeback and curl drills, and on hitch routes",
+                SPEED: "Top speed in the 40-yard dash, and on go routes"}
     for name, label in transfer.items():
-        add("Drill movement and game movement", label, matched.pair_frame(next(p for p in matched.PAIRS if p.name == name), plays))
-    outcome = {("separation", "MAN_COVERAGE"): "hitch separation vs man", ("separation", "ZONE_COVERAGE"): "hitch separation vs zone",
-               ("target", "MAN_COVERAGE"): "hitch target rate vs man", ("yac", None): "yards after catch over expected, hitches"}
-    stage = {"combine braking": ("Drill braking and results on hitch routes", "Stop-drill braking"),
+        add("Combine movement and the same movement in games", label, matched.pair_frame(next(p for p in matched.PAIRS if p.name == name), plays))
+    outcome = {("separation", "MAN_COVERAGE"): "separation against man coverage", ("separation", "ZONE_COVERAGE"): "separation against zone coverage",
+               ("target", "MAN_COVERAGE"): "target rate against man coverage", ("yac", None): "yards after the catch, compared with expected"}
+    stage = {"combine braking": ("Combine braking and results on hitch routes", "Stop-drill braking"),
              "game hitch braking": ("Game braking and results on hitch routes", "Game hitch braking")}
     for i, (pred, y, cov, d) in enumerate(value.frames()):
         add(stage[pred][0], f"{stage[pred][1]}: {outcome[(y, cov)]}", d, primary=i == 0)

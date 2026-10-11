@@ -15,6 +15,7 @@ DRILL_ALIASES = {
 ATTEMPT_KEY = ["nfl_id", "event_id", "drill", "attempt"]
 MIN_GROUP = 8  # players needed to z-score a drill within one draft class
 Z_CLIP = 3.0
+MIN_DURATION = 0.65  # of the drill-by-class median; a shorter clip was cut off before the drill finished
 
 
 def build_attempt_features() -> pd.DataFrame:
@@ -43,15 +44,19 @@ def _zscore(df: pd.DataFrame, by: list[str]) -> pd.DataFrame:
     return z.where(g.transform("count") >= MIN_GROUP)
 
 
-def build_player_drill(attempts: pd.DataFrame) -> pd.DataFrame:
+def build_player_drill(attempts: pd.DataFrame, min_duration: float = MIN_DURATION) -> pd.DataFrame:
     """One row per player x drill: median over attempts, z-scored against peers.
 
     Drill setups change between years (same name, different distance), so scores
     are relative to the same position group in the same draft class, falling
-    back to all classes when a class is too small.
+    back to all classes when a class is too small. Clips cut off early are
+    dropped first: a stop drill that ends at top speed would score as no braking.
     """
     con = connect()
     meta = con.execute("SELECT nfl_id, draft_year, combine_position FROM combine_results").df()
+    attempts = attempts.merge(meta[["nfl_id", "draft_year"]], on="nfl_id")
+    typical = attempts.groupby(["drill", "draft_year"])["duration"].transform("median")
+    attempts = attempts[attempts["duration"] >= min_duration * typical]
     pd_ = attempts.groupby(["nfl_id", "drill"], as_index=False)[FEATURES].median()
     pd_ = pd_.merge(meta, on="nfl_id")
     z = _zscore(pd_, ["drill", "combine_position", "draft_year"])
