@@ -67,6 +67,25 @@ def stopwatch(frame: pd.DataFrame) -> plt.Figure:
     return fig
 
 
+LABELLED = ["Rashee Rice", "Puka Nacua", "Marvin Mims"]  # discussed in the text, alongside the five hardest and softest
+
+
+def _label_receivers(ax, d: pd.DataFrame) -> None:
+    """Name the five hardest and five softest drill brakers, and the receivers the text discusses."""
+    from .data import connect
+
+    names = connect().execute("SELECT nfl_id, display_name FROM players").df().set_index("nfl_id")["display_name"]
+    d = d.assign(name=d["nfl_id"].map(names)).sort_values("c")
+    pick = pd.concat([d.head(5), d.tail(5), d[d["name"].isin(LABELLED)]]).drop_duplicates("nfl_id")
+    nudge = {"Troy Franklin": ((0, 9), "center"), "Quentin Johnston": ((6, -7), "left"),
+             "Jalen McMillan": ((6, 5), "left")}  # keep neighbouring labels apart
+    for _, r in pick.iterrows():
+        right = r["c"] < d["c"].median()
+        offset, ha = nudge.get(r["name"], ((6 if right else -6, 0), "left" if right else "right"))
+        ax.annotate(r["name"], (r["c"], r["g"]), xytext=offset, textcoords="offset points",
+                    ha=ha, va="center", fontsize=7.5, color=MUTED, zorder=5)
+
+
 def transfer_scatter(d: pd.DataFrame, numbers: dict) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7.2, 5.6))
     for year, g in d.groupby("draft_year"):
@@ -74,6 +93,7 @@ def transfer_scatter(d: pd.DataFrame, numbers: dict) -> plt.Figure:
         ax.scatter(g["c"], g["g"], s=46, color=CLASS_COLOR[year], marker=CLASS_MARKER[year], edgecolor=SURFACE,
                    linewidth=1, zorder=3, label=f"{year} draft class (correlation {_num(rho)})")
     _fit(ax, d["c"], d["g"], INK)
+    _label_receivers(ax, d)
     ax.set_xlabel("Braking in the Combine comeback and curl drills\n(standard deviations above or below his draft-class average)")
     ax.set_ylabel("Braking on hitch routes in NFL games\n(yards per second², his 90th-percentile play)")
     ax.set_ylim(top=d["g"].max() + 0.7)
@@ -139,6 +159,7 @@ ROBUST_LABELS = {
     "drill CURL_ROUTE_RIGHT only": ("Which drill", "Curl drill only"),
     "keeping cut-off drill clips": ("Which drill", "Both drills, keeping clips that were cut off early"),
     "all breaking routes": ("Which game routes", "All breaking routes"),
+    "controlling for speed on hitch routes": ("Extra control", "His typical top speed on hitch routes"),
     "placebo: go routes in games": ("Comparisons that should show no relationship", "Comeback and curl drills, with go routes in games"),
     "placebo: go-route drill": ("Comparisons that should show no relationship", "Go-route drill, with hitch routes in games"),
     "placebo: 40-yard dash": ("Comparisons that should show no relationship", "40-yard dash, with hitch routes in games"),
@@ -165,8 +186,8 @@ def _rows(ax, table, group_of, draw, header_x: float) -> None:
 
 def robustness(table: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(8.6, 6.9))
-    lo, hi = table.attrs["ci95"]
-    ax.axvspan(lo, hi, color=BLUE, alpha=0.10, zorder=1)
+    lo, hi = table.attrs["null95"]
+    ax.axvspan(lo, hi, color=GREY, alpha=0.18, zorder=1)
     ax.axvline(0, color=INK, lw=1, zorder=2)
 
     def draw(r, y):
@@ -181,9 +202,9 @@ def robustness(table: pd.DataFrame) -> plt.Figure:
     ax.set_xlim(-0.45, 0.82)
     ax.set_xlabel("Correlation between drill braking and game braking\n(after accounting for 40 time, height, weight and alignment)")
     _title(fig, "The braking result under different analysis choices",
-           "Each row repeats the comparison of drill braking with game braking after changing one choice. The shaded band "
-           "is the 95% interval around the main result. Orange diamonds compare a drill with a game situation it does "
-           "not rehearse.", top=0.985)
+           "Each row repeats the comparison of drill braking with game braking after changing one choice. The grey band "
+           "is the range expected by chance if drill and game braking were unrelated (95% of 2,000 shuffles). Orange "
+           "diamonds compare a drill with a game situation it does not rehearse.", top=0.985)
     fig.tight_layout(rect=(0, 0, 1, 0.89))
     return fig
 
@@ -207,7 +228,7 @@ def chain(table: pd.DataFrame) -> plt.Figure:
     ax.set_xlim(-0.75, 1.42)
     ax.set_xticks([-0.5, 0, 0.5])
     ax.set_xlabel("Correlation after accounting for 40 time,\nheight, weight and alignment (line: 95% interval)", loc="left")
-    _title(fig, "Braking carries over to games and is unrelated to results on hitch routes",
+    _title(fig, "Braking carries over to games but does not improve results on hitch routes",
            "Wide receivers. Each row is the correlation between the two things named. A filled dot means the 95% "
            "interval does not include zero, and an open dot means it does.", top=0.985)
     fig.tight_layout(rect=(0, 0, 1, 0.89))

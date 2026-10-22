@@ -6,9 +6,9 @@ Two Combine drills predict how hard a wide receiver brakes on hitch routes in NF
 
 - I measure braking from the Combine's 10 Hz tracking in the comeback and curl drills, and in the same way on hitch routes in regular-season games.
 - Receivers who brake harder in the drills also brake harder in games. The rank correlation is 0.42 across 54 receivers, and 0.43 after I account for 40 time, height, weight and alignment.
-- Braking does not predict separation. I wrote that test down and committed it before I ran it, and the correlation against man coverage came out at 0.10. Braking measured in games does not predict separation either.
+- Braking does not predict separation, in a test I committed before running it (0.10 against man coverage), and neither does braking measured in games.
 
-I would use these measurements to judge how a receiver fits a route tree and to plan his development, and I would not use them to forecast how open he will get.
+I would use the drills as an early read on how a receiver moves, replaced by game tracking once he plays. I would not use them to forecast how open or productive he will be.
 
 ## Measuring braking the same way in the drill and in the game
 
@@ -16,7 +16,7 @@ My first approach, comparing drill measurements with related game statistics, fo
 
 In the drill, I take each 10 Hz trace and compute the receiver's hardest sustained deceleration over half a second. I use the median across his attempts and express it relative to his own draft class and drill, since drill setups change from year to year. I then average the comeback and curl drills. I drop clips that last less than 65% of the usual time for their drill, which removes 29 of 6,307, because they end before the receiver has stopped.
 
-In games, I compute the same quantity on every regular-season hitch route, starting at the snap, for the 2023, 2024 and 2025 draft classes. For each receiver I use his 90th-percentile play, because most hitch routes do not require a full-effort stop and a typical play says little about how hard he is able to brake.
+In games, I compute the same quantity on every regular-season hitch route, starting at the snap, for the 2023, 2024 and 2025 draft classes. For each receiver I use his 90th-percentile play, because most hitch routes do not call for a full stop.
 
 ![Braking, measured the same way in a drill and in a game](figures/fig6_traces.png)
 
@@ -32,7 +32,7 @@ To judge how strong these relationships are, I compared each with the same measu
 
 ![Predicting game movement from the Combine and from the previous season](figures/fig3_benchmark.png)
 
-The previous season predicts braking at 0.56 and the Combine drills at 0.33. For top speed the numbers are 0.67 and 0.47. In variance explained, the Combine gives about a third of what a season gives for braking and about half for top speed. The intervals overlap, as only 33 receivers have two seasons. Once a season is known, the drills add nothing (0.10, p = 0.58). The drills are a pre-draft stand-in for game tracking.
+The previous season predicts braking at 0.56 and the Combine drills at 0.33. For top speed the numbers are 0.67 and 0.47. In variance explained, the Combine gives about a third of what a season gives for braking and about half for top speed. The intervals overlap, as only 33 receivers have two seasons. Once a season is known, the drills add nothing (0.10, p = 0.58).
 
 Part of the gap is noise in the drills. The comeback and curl drills agree with each other at only 0.26, so more repetitions per drill would likely sharpen the read.
 
@@ -40,36 +40,21 @@ Part of the gap is noise in the drills. The comeback and curl drills agree with 
 
 ![Braking in Combine drills and braking in NFL games](figures/fig2_braking_transfer.png)
 
-Drill braking and game braking correlate at 0.42, or 0.43 after the controls. The bootstrap 95% interval is 0.18 to 0.63, the permutation p-value is 0.005, and the false-discovery q-value is 0.018. Within the 2023, 2024 and 2025 classes the correlations are 0.45, 0.45 and 0.43.
+Drill braking and game braking correlate at 0.42, or 0.43 after the controls. The bootstrap 95% interval is 0.18 to 0.63, the permutation p-value is 0.005, and the false-discovery q-value is 0.018. The correlation is similar within each draft class.
 
-| Receiver | Draft | Drill rank | Game rank (of 54) |
-|---|---|---|---|
-| Arian Smith | 2025, pick 110 | 1 | 16 |
-| Rome Odunze | 2024, pick 9 | 2 | 24 |
-| Troy Franklin | 2024, pick 102 | 3 | 7 |
-| Tyler Scott | 2023, pick 133 | 4 | 1 |
-| Adonai Mitchell | 2024, pick 52 | 5 | 6 |
-| Quentin Johnston | 2023, pick 21 | 50 | 27 |
-| Jalen McMillan | 2024, pick 92 | 51 | 18 |
-| Luke McCaffrey | 2024, pick 100 | 52 | 42 |
-| Ryan Flournoy | 2024, pick 216 | 53 | 47 |
-| Brian Thomas | 2024, pick 23 | 54 | 30 |
-
-The table lists the five hardest and five softest brakers in the drills. All five of the hardest are in the top half for game braking, and three of the five softest are in the bottom half. The relationship has clear misses. Rashee Rice ranked 7th in the drills and 48th in games across 141 hitch routes. Brian Thomas had the softest drill braking by a wide margin and sits near the middle in games.
+The figure names the five hardest and five softest brakers in the drills. All five of the hardest are in the top half for game braking, and three of the five softest are in the bottom half. The relationship has clear misses. Rashee Rice ranked 7th in the drills and 48th in games across 141 hitch routes. Brian Thomas had the softest drill braking by a wide margin and sits near the middle in games.
 
 ### Checking the result
 
-I reran the braking comparison under different analysis choices and added three placebo comparisons that should show no relationship.
+I reran the comparison under other analysis choices and three placebos.
 
 ![The braking result under different analysis choices](figures/fig4_robustness.png)
 
-The result is specific to matching drills and routes. Braking in the stop drills does not predict braking on go routes (0.07), and braking measured in the go-route drill (−0.25) or the 40-yard dash (−0.05) does not predict braking on hitch routes.
+The result is specific to matching drills and routes. Braking in the stop drills does not predict braking on go routes (0.07). On hitch routes, braking in the 40-yard dash shows nothing (−0.05) and braking in the go-route drill runs the other way (−0.25). The grey band shows the range chance alone would produce.
 
-The result holds across definitions. Three other ways of measuring braking, each drill on its own, and different minimum play counts all give correlations between 0.33 and 0.43. If I keep the clips that were cut off early, the correlation is 0.49, so those clips had been flattering the result.
+The result holds across definitions. Three other ways of measuring braking, each drill on its own, and different minimum play counts all give correlations between 0.33 and 0.43. If I keep the clips that were cut off early, the correlation is 0.49, so those clips had been flattering the result. Harder game braking could simply mean arriving at the break faster, so I also controlled for each receiver's typical top speed on hitch routes. The correlation rises to 0.45.
 
-It does depend on using a receiver's hardest plays. When I use his median hitch route, the correlation drops to 0.18.
-
-Two extensions did not work. A version for tight ends using a different drill did not replicate, although it only had 23 players. Other receiver traits that I expected to carry over, including re-acceleration out of the break and speed carried through cuts, did not.
+It does depend on using a receiver's hardest plays. I set the 90th percentile before seeing any results. Across the 75th to 95th percentiles the correlation averages 0.34, and with his median hitch route it drops to 0.18, inside the range expected by chance. Some of the 29 drill-to-game pairs were added after earlier versions found nothing, so the q-value understates how much I searched. The 2026 class is the real test.
 
 ## What the sensors add to the stopwatch
 
@@ -77,39 +62,39 @@ I also checked what the standard Combine numbers predict for receivers. Because 
 
 ![40-yard dash time and four game outcomes for wide receivers](figures/fig1_stopwatch.png)
 
-A faster 40 goes with a higher top speed in games (−0.55), and that relationship holds up after correcting for every test I ran on receivers. The 40 has much weaker relationships with separation (−0.18), targets per route (−0.12) and yards per route (−0.13). The measurement most related to separation is body weight, where heavier receivers separate less (−0.51).
+A faster 40 goes with a higher top speed in games (−0.55), and survives correction across all my receiver tests. The 40 barely relates to separation, targets per route or yards per route (−0.12 to −0.18). The measurement most related to separation is body weight, where heavier receivers separate less (−0.51).
 
 The sensors add to the official time in two ways. The tracked 40's peak speed predicts top speed on go routes at 0.44 after I remove the official 40 time (q = 0.017), so it carries information the official time leaves out. Braking is almost unrelated to top speed across receivers (−0.13, 91 receivers), so it describes a second part of how a receiver moves that the 40 does not cover. It is also unrelated to the two stopwatch drills that involve stopping, the 3-cone (−0.03, 32 receivers) and the short shuttle (−0.08, 36). Too few of the 54 ran those drills to use them as controls.
 
 ## What the measurements should and should not be used for
 
-The most direct use is judging fit with a route tree. An offence built on timing throws to hitches, curls and comebacks asks its receivers to stop hard on a large share of their routes, and the drills show which prospects are able to do that. An offence built on vertical routes can give more weight to the sensor's top speed. A position coach can use the same reading to plan a rookie's development.
+The drills measure how a receiver moves, not how good he is. Puka Nacua ranks 38th of 54 in drill braking and 44th in games, and is one of the most productive receivers in his class. A timing offence built on hitches, curls and comebacks may still want prospects who stop hard, but whether that improves its results is a hypothesis for the 2026 class, not a finding.
 
-I expected a receiver who stops faster to leave his defender further behind, so I also tested whether braking predicts separation. My first test pooled all hitch routes and found nothing. Against zone coverage the defender is already sitting on the route regardless of how the receiver stops, so any effect should be clearer against man coverage. I wrote out a single test in full, including the players, plays, outcome, statistic and expected direction, committed it to the repository, and only then ran it.
+I expected a receiver who stops faster to leave his defender further behind, so I also tested whether braking predicts separation. Pooled over all hitch routes, I found nothing. Against zone the defender is already sitting on the route, so any effect should be clearer against man coverage. I wrote out that single test in full, committed it, and only then ran it.
 
-![Braking carries over to games and is unrelated to results on hitch routes](figures/fig5_chain.png)
+![Braking carries over to games but does not improve results on hitch routes](figures/fig5_chain.png)
 
 The pre-specified test found no relationship. The correlation between drill braking and cushion-adjusted hitch separation against man coverage is 0.10 (p = 0.52, 41 receivers). Target rate and yards after catch over expected show no relationship either.
 
-Braking measured in games does not predict hitch separation either, as the bottom section of the figure shows. I extended that check to eight in-game movement measures across four groups of routes, tested against both separation and yards per route. Of those 64 tests, two pass false-discovery correction. One rests on 17 players, and the other runs opposite to what I expected. Separation is a stable trait for a receiver, with a split-half reliability of 0.69, so these results cannot be put down to a noisy outcome.
+Game braking does not predict hitch separation either (bottom of the figure). I extended that check to eight in-game movement measures across four groups of routes, tested against both separation and yards per route. Of those 64 tests, one passes false-discovery correction at q < 0.05, and it rests on 17 players. One more passes at q < 0.10, and it runs opposite to what I expected: receivers who brake harder in games separate slightly less across all routes (−0.34, 77 receivers). The signs against zone coverage in the figure point the same way. One possible reason, which I have not tested, is that hard stoppers run hitches that zone defenders sit under. Separation is a stable trait for a receiver, with a split-half reliability of 0.69, so these results cannot be put down to a noisy outcome.
 
-I also compared braking and top speed with separation against man and zone overall, and against Cover 1, Cover 2, Cover 3 and Cover 4 or 6. None of those 12 tests showed a relationship, and the largest correlation was 0.15.
+Splitting separation on all routes by coverage (man, zone, and Cover 1 to Cover 6) showed nothing for braking or top speed in 12 tests (largest correlation 0.15).
 
-The Combine measurement is therefore doing its job, and the weak link is between movement and separation. Separation probably depends on things this dataset does not include, such as the defender's leverage and technique and the timing of the route. A team with tracking for every player could measure the cornerback's braking on the same plays and test whether the gap between the two players predicts separation better than the receiver's braking does alone. I think that is the most useful open question here.
+The Combine measurement is therefore doing its job, and the weak link is between movement and separation. Separation probably depends on things this dataset does not include, such as the defender's leverage and technique and the timing of the route. A team with tracking for all 22 players could test whether the gap between receiver and cornerback braking predicts separation. I think that is the most useful open question here.
 
 ## Everything else I tested
 
-The braking result is one positive finding out of many attempts. The notebook reproduces 5,825 statistical tests, and I estimate that I ran several hundred more while developing the analysis.
+The braking result is one positive finding out of many attempts. The notebook reproduces 5,826 statistical tests, and I estimate that I ran several hundred more while developing the analysis.
 
 | What I tested | Tests | Result |
 |---|---|---|
-| Standard Combine numbers and 11 planned interactions against outcomes, five positions | 518 | 40 time predicts game speed; receiver weight predicts separation |
-| Matched drill-to-game comparisons, four positions | 29 | Receiver braking and top speed survive; nothing for linemen or defensive backs after controlling for size and alignment |
-| Variations and placebos for the braking comparison | 18 | Stable; placebos show no relationship |
-| Whether braking, top speed or any in-game movement predicts results, including by coverage | 84 | No relationship, including the pre-specified test |
+| Standard Combine numbers and 11 planned interactions, five positions | 518 | 40 time predicts game speed; receiver weight predicts separation |
+| Matched drill-to-game comparisons, four positions | 29 | Receiver braking and top speed survive; nothing for linemen or defensive backs |
+| Variations and placebos for the braking comparison | 19 | Stable; placebos show no relationship |
+| Whether braking, top speed or any in-game movement predicts results, including by coverage | 84 | No positive relationship, including the pre-specified test |
 | Whether drill traits predict route or alignment usage | 17 | No relationship |
-| Every pairwise interaction of Combine numbers and drill traits | 4,589 | Two pass correction, and neither holds up on closer inspection |
-| Whether a position improves from season 1 to season 2 or 3, and whether the Combine predicts who improves | 567 | Nothing passes correction |
+| Every pairwise interaction of Combine numbers and drill traits | 4,589 | Two pass correction; neither holds up on inspection |
+| Season-to-season improvement, and whether the Combine predicts it | 567 | Nothing passes correction |
 
 I also trained two neural networks to match players across drills and games. They did not predict any outcome and are in the notebook appendix.
 

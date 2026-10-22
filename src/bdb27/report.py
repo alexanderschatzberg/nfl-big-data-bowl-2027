@@ -112,6 +112,9 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
     out["matched_family"] = {"tests": len(mt), "survive_q05": mt.loc[mt["partial_q"] < 0.05, "trait"].tolist()}
     out[HEADLINE] |= {"ci95": robustness.attrs["ci95"], "perm_p": round(float(robustness.attrs["perm_p"]), 4)}
     out["robustness"] = {r["variant"]: round(r["partial_rho"], 2) for _, r in robustness.iterrows()}
+    upper = robustness[robustness["variant"].isin(["game quantile 0.75", "game quantile 0.85", "as specified",
+                                                   "game quantile 0.95"])]["partial_rho"]
+    out[HEADLINE] |= {"null95": robustness.attrs["null95"], "mean_over_quantiles_75_95": round(float(upper.mean()), 2)}
     out["benchmark"] = {k: {"combine_to_game": round(float(b["combine_to_game"]), 2), "combine_ci": np.round(b["combine_ci"], 2).tolist(),
                             "n": int(b["n"]),
                             "combine_to_next_season": round(float(b["combine_to_next_season"]), 2),
@@ -133,7 +136,8 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
     out["chain"] = [{"label": r["label"], "n": int(r["n"]), "partial_rho": round(r["partial_rho"], 2), "p": round(r["p"], 3),
                      "ci": [round(r["lo"], 2), round(r["hi"], 2)], "pre_specified": bool(r["pre_specified"])}
                     for _, r in chain_table.iterrows()]
-    out["game_movement"] = {"tests": len(game_movement), "q_below_10": int((game_movement["q"] < 0.10).sum()),
+    out["game_movement"] = {"tests": len(game_movement), "q_below_05": int((game_movement["q"] < 0.05).sum()),
+                            "q_below_10": int((game_movement["q"] < 0.10).sum()),
                             "separation_reliability": round(float(game_movement.attrs["separation_reliability"]), 2),
                             "top": game_movement.head(3).round(3).to_dict("records")}
     out["coverage_profile"] = {"tests": len(coverage), "max_abs_partial": round(float(coverage["partial_rho"].abs().max()), 2),

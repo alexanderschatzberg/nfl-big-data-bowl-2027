@@ -117,13 +117,17 @@ def pair_frame(pair: Pair, plays: pd.DataFrame, **overrides) -> pd.DataFrame:
     sub = plays[plays["position"] == pair.position].query(overrides.get("where", pair.plays))
     g = sub.groupby("nfl_id")[feature]
     g = g.quantile(q).where(g.count() >= min_plays).rename("g")
+    if overrides.get("speed_control"):
+        # How fast he typically arrives at the break on these plays, to separate stopping from speed.
+        g = pd.concat([g, sub.groupby("nfl_id")["vmax"].median().rename("game_speed")], axis=1)
     role = plays.dropna(subset=["lined_up"]).groupby("nfl_id")["lined_up"].agg(lambda s: s.mode().iat[0]).rename("role")
     meta = connect().execute(f"SELECT nfl_id, draft_year, {', '.join(SIZE_SPEED)} FROM combine_results").df()
     return meta.merge(c, on="nfl_id").merge(g, on="nfl_id").merge(role, on="nfl_id").dropna(subset=["c", "g"])
 
 
 def test(d: pd.DataFrame) -> dict:
-    controls = d[SIZE_SPEED].fillna(d[SIZE_SPEED].median()).to_numpy(float)
+    cols = SIZE_SPEED + [c for c in ("game_speed",) if c in d]
+    controls = d[cols].fillna(d[cols].median()).to_numpy(float)
     Z = np.column_stack([controls, pd.get_dummies(d["role"], drop_first=True, dtype=float).to_numpy()])
     rho, p = stats.spearmanr(d["c"], d["g"])
     prho, pp = stats.spearmanr(evaluate._residualize(d["c"].to_numpy(), Z), evaluate._residualize(d["g"].to_numpy(), Z))
@@ -155,6 +159,7 @@ def robustness(name: str = "stop-route braking", n_boot: int = 2000) -> pd.DataF
     uncut = combine.build_player_drill(pd.read_parquet(artifacts_dir() / "combine_attempts.parquet"), min_duration=0)
     variants |= {"keeping cut-off drill clips": {"player_drill": uncut},
                  "all breaking routes": {"where": f"route_ran in {list(BREAKING)}"},
+                 "controlling for speed on hitch routes": {"speed_control": True},
                  "placebo: go routes in games": {"where": "route_ran == 'GO'"},
                  "placebo: go-route drill": {"drills": ["GO_ROUTE_RIGHT"]},
                  "placebo: 40-yard dash": {"drills": ["FORTY_YARD_DASH"]}}
@@ -165,6 +170,7 @@ def robustness(name: str = "stop-route braking", n_boot: int = 2000) -> pd.DataF
     null = [_partial(d.assign(c=rng.permutation(d["c"].to_numpy()))) for _ in range(n_boot)]
     t = pd.DataFrame(rows)
     t.attrs = {"ci95": np.percentile(boot, [2.5, 97.5]).round(3).tolist(),
+               "null95": np.percentile(null, [2.5, 97.5]).round(3).tolist(),
                "perm_p": (1 + np.sum(np.abs(null) >= abs(_partial(d)))) / (1 + n_boot)}
     return t
 

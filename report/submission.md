@@ -22,7 +22,7 @@ Upload in this order (file names are unchanged; the benchmark is the lead claim,
 
 ## Images inside the description
 
-`writeup.md` embeds the six figures with relative paths, in the order fig6, fig3, fig2, fig4, fig1, fig5. Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 6 figures + 2 tables (limit: fewer than 10). The prose is 1,829 words and the two tables add about 300 more (limit: 2,000). If table text counts, the writeup is over the limit.
+`writeup.md` embeds the six figures with relative paths, in the order fig6, fig3, fig2, fig4, fig1, fig5. Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 6 figures + 1 table (limit: fewer than 10). The text is 1,975 words including the table and headings, not counting image tags (limit: 2,000).
 
 ## Attachments
 
