@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | **Title** (≤ 80) | Predicting How Receivers Move: Combine Drills Against a Season of NFL Tracking |
-| **Subtitle** (≤ 140) | Two Combine drills predict how hard a receiver brakes in NFL games at 0.42; a full season of his own NFL tracking predicts it at 0.56. |
+| **Subtitle** (≤ 140) | Two Combine drills predict how hard a receiver brakes in NFL games before his first snap, though less well than a season of NFL tracking. |
 | **Card and thumbnail image** | `report/figures/card_560x280.png` (560 × 280) |
 | **Submission track** | University track |
 | **Project description** | Paste `report/writeup.md` |
@@ -22,7 +22,7 @@ Upload in this order (file names are unchanged; the benchmark is the lead claim,
 
 ## Images inside the description
 
-`writeup.md` embeds the six figures with relative paths, in the order fig6, fig3, fig2, fig4, fig1, fig5. Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 6 figures + 2 tables (limit: fewer than 10). The text is 1,964 words, not counting table borders and image tags (limit: 2,000).
+`writeup.md` embeds the six figures with relative paths, in the order fig6, fig3, fig2, fig4, fig1, fig5. Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 6 figures + 2 tables (limit: fewer than 10). The prose is 1,829 words and the two tables add about 300 more (limit: 2,000). If table text counts, the writeup is over the limit.
 
 ## Attachments
 

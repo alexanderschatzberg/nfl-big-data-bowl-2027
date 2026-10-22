@@ -169,12 +169,15 @@ def robustness(name: str = "stop-route braking", n_boot: int = 2000) -> pd.DataF
     return t
 
 
-def benchmark(name: str = "stop-route braking", season_min: int = 12) -> dict:
+def benchmark(name: str = "stop-route braking", season_min: int = 12, n_boot: int = 2000) -> dict:
     """How good is the drill as a predictor, next to the best available yardstick?
 
     The yardstick is the same game measure from the player's own previous
-    season. Also reports the reliability of each side and the transfer
-    correlation corrected for it.
+    season. Both predict the same target, the next season, on the same pairs of
+    seasons, and intervals resample players (some contribute two pairs).
+    `combine_given_season` asks whether the drill adds anything once a season is
+    known (one pair per player, his earliest). Also reports the reliability of
+    each side and the pooled transfer correlation corrected for it.
     """
     plays = game_plays()
     pair = next(p for p in PAIRS if p.name == name)
@@ -183,8 +186,9 @@ def benchmark(name: str = "stop-route braking", season_min: int = 12) -> dict:
     sub = sub[sub["nfl_id"].isin(d["nfl_id"])]
     g = sub.groupby(["nfl_id", "season"])[pair.feature]
     by_season = g.quantile(pair.quantile).where(g.count() >= season_min).unstack()
-    pairs = pd.concat([by_season[[a, b]].set_axis(["prev", "next"], axis=1).dropna()
-                       for a, b in zip(by_season.columns[:-1], by_season.columns[1:])])
+    pairs = pd.concat([by_season[[a, b]].set_axis(["prev", "next"], axis=1).dropna().assign(season=b)
+                       for a, b in zip(by_season.columns[:-1], by_season.columns[1:])]).reset_index()
+    pairs = pairs.merge(d[["nfl_id", "c"]], on="nfl_id")
     # Split-half reliability of the game capability (random halves of each player's plays).
     rng = np.random.default_rng(0)
     halves = []
@@ -202,13 +206,49 @@ def benchmark(name: str = "stop-route braking", season_min: int = 12) -> dict:
     drill_rel = 2 * r_drill / (1 + r_drill)
     rho = stats.spearmanr(d["c"], d["g"])[0]
 
-    def ci(a: pd.Series, b: pd.Series) -> list:
-        a, b = a.to_numpy(), b.to_numpy()
-        idx = rng.integers(0, len(a), (2000, len(a)))
-        return np.percentile([stats.spearmanr(a[i], b[i])[0] for i in idx], [2.5, 97.5]).tolist()
+    def both(x: pd.DataFrame) -> tuple:
+        return stats.spearmanr(x["c"], x["next"])[0], stats.spearmanr(x["prev"], x["next"])[0]
 
-    return {"n": len(d), "combine_to_game": rho, "combine_ci": ci(d["c"], d["g"]),
-            "season_to_next_season": stats.spearmanr(pairs["prev"], pairs["next"])[0],
-            "season_ci": ci(pairs["prev"], pairs["next"]), "season_pairs": len(pairs),
-            "season_players": int(pairs.index.nunique()), "game_reliability": game_rel, "drill_to_drill": r_drill,
-            "drill_reliability": drill_rel, "corrected_for_reliability": rho / np.sqrt(game_rel * drill_rel)}
+    combine_next, season_next = both(pairs)
+    ids = pairs["nfl_id"].unique()
+    rows = {i: pairs[pairs["nfl_id"] == i] for i in ids}
+    boot = np.array([both(pd.concat([rows[i] for i in rng.choice(ids, len(ids))])) for _ in range(n_boot)])
+    cg = d[["c", "g"]].to_numpy()
+    pooled_boot = [stats.spearmanr(*cg[rng.integers(0, len(cg), len(cg))].T)[0] for _ in range(n_boot)]
+    first = pairs.sort_values("season").groupby("nfl_id").head(1)
+    Z = first[["prev"]].to_numpy(float)
+    added, added_p = stats.spearmanr(evaluate._residualize(first["c"].to_numpy(), Z),
+                                     evaluate._residualize(first["next"].to_numpy(), Z))
+
+    def pct(v) -> list:
+        return np.percentile(v, [2.5, 97.5]).tolist()
+
+    return {"n": len(d), "combine_to_game": rho, "combine_ci": pct(pooled_boot),
+            "combine_to_next_season": combine_next, "combine_next_ci": pct(boot[:, 0]),
+            "season_to_next_season": season_next, "season_ci": pct(boot[:, 1]),
+            "difference_ci": pct(boot[:, 1] - boot[:, 0]),
+            "variance_share": combine_next ** 2 / season_next ** 2,
+            "combine_given_season": added, "combine_given_season_p": added_p, "combine_given_season_n": len(first),
+            "season_pairs": len(pairs), "season_players": len(ids), "game_reliability": game_rel,
+            "drill_to_drill": r_drill, "drill_reliability": drill_rel,
+            "corrected_for_reliability": rho / np.sqrt(game_rel * drill_rel)}
+
+
+def agility_check(name: str = "stop-route braking") -> pd.DataFrame:
+    """Is the drill trait just the 3-cone or shuttle in disguise?
+
+    Correlates the drill score with each agility time across every player in
+    the position who has both. Too few of the matched sample ran these drills
+    to add them as controls, so this is the check reported instead.
+    """
+    pair = next(p for p in PAIRS if p.name == name)
+    drills = pd.read_parquet(artifacts_dir() / "combine_player_drill.parquet")
+    drills = drills[drills["drill"].isin(pair.drills) & (drills["combine_position"] == pair.position)]
+    c = drills.groupby("nfl_id")[pair.feature].mean().rename("c")
+    m = connect().execute("SELECT nfl_id, three_cone, short_shuttle, forty FROM combine_results").df().merge(c, on="nfl_id")
+    rows = []
+    for col in ("three_cone", "short_shuttle", "forty"):
+        s = m.dropna(subset=[col])
+        r, p = stats.spearmanr(s["c"], s[col])
+        rows.append({"time": col, "n": len(s), "rho": r, "p": p})
+    return pd.DataFrame(rows)

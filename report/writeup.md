@@ -2,7 +2,7 @@
 
 ## Summary
 
-Two Combine drills predict how hard a wide receiver brakes on hitch routes in NFL games at a correlation of 0.42. A full season of his own NFL tracking predicts the following season at 0.56. For top speed, the tracked 40-yard dash reaches 0.55 and a previous season reaches 0.67. A team can therefore have most of what a season of game tracking says about how a receiver moves before the draft.
+Two Combine drills predict how hard a wide receiver brakes on hitch routes in NFL games, at a correlation of 0.42 across his career. A season of his own NFL tracking is a better guide. Predicting the same NFL seasons, the drills reach 0.33 and the previous season reaches 0.56. For top speed, the tracked 40-yard dash reaches 0.47 and a previous season 0.67. The drills give a team a partial read on how a receiver moves before he plays a snap, and once a season of game tracking exists they add nothing to it.
 
 - I measure braking from the Combine's 10 Hz tracking in the comeback and curl drills, and in the same way on hitch routes in regular-season games.
 - Receivers who brake harder in the drills also brake harder in games. The rank correlation is 0.42 across 54 receivers, and 0.43 after I account for 40 time, height, weight and alignment.
@@ -28,11 +28,13 @@ I set up 29 of these drill-to-game pairs across receivers, offensive and defensi
 
 ## The Combine compared with a season of NFL tracking
 
-To judge how strong these two relationships are, I compared each with how well one NFL season of the same measurement predicts the next.
+To judge how strong these relationships are, I compared each with the same measurement from the receiver's previous NFL season. Both predict the same target, his braking or top speed in one NFL season, across 47 pairs of consecutive seasons from 33 receivers (48 from 34 for top speed).
 
 ![Predicting game movement from the Combine and from the previous season](figures/fig3_benchmark.png)
 
-A season of NFL hitch routes predicts the next season's braking at 0.56. The two Combine drills predict game braking at 0.42. For top speed the corresponding numbers are 0.67 and 0.55. The intervals overlap for both traits, and the season-to-season figure for braking rests on 47 pairs of seasons from 33 receivers. I read this as the Combine giving roughly three quarters of what a season of game tracking provides.
+The previous season predicts braking at 0.56 and the Combine drills at 0.33. For top speed the numbers are 0.67 and 0.47. In variance explained, the Combine gives about a third of what a season gives for braking and about half for top speed. The intervals overlap, as only 33 receivers have two seasons. Once a season is known, the drills add nothing (0.10, p = 0.58). The drills are a pre-draft stand-in for game tracking.
+
+Part of the gap is noise in the drills. The comeback and curl drills agree with each other at only 0.26, so more repetitions per drill would likely sharpen the read.
 
 ## Braking carries over receiver by receiver
 
@@ -77,7 +79,7 @@ I also checked what the standard Combine numbers predict for receivers. Because 
 
 A faster 40 goes with a higher top speed in games (−0.55), and that relationship holds up after correcting for every test I ran on receivers. The 40 has much weaker relationships with separation (−0.18), targets per route (−0.12) and yards per route (−0.13). The measurement most related to separation is body weight, where heavier receivers separate less (−0.51).
 
-The sensors add to the official time in two ways. The tracked 40's peak speed predicts top speed on go routes at 0.44 after I remove the official 40 time (q = 0.017), so it carries information the official time leaves out. Braking is almost unrelated to top speed across receivers (−0.13, 91 receivers), so it describes a second part of how a receiver moves that the 40 does not cover.
+The sensors add to the official time in two ways. The tracked 40's peak speed predicts top speed on go routes at 0.44 after I remove the official 40 time (q = 0.017), so it carries information the official time leaves out. Braking is almost unrelated to top speed across receivers (−0.13, 91 receivers), so it describes a second part of how a receiver moves that the 40 does not cover. It is also unrelated to the two stopwatch drills that involve stopping, the 3-cone (−0.03, 32 receivers) and the short shuttle (−0.08, 36). Too few of the 54 ran those drills to use them as controls.
 
 ## What the measurements should and should not be used for
 
@@ -97,7 +99,7 @@ The Combine measurement is therefore doing its job, and the weak link is between
 
 ## Everything else I tested
 
-The braking result is one positive finding out of many attempts. The notebook reproduces 5,822 statistical tests, and I estimate that I ran several hundred more while developing the analysis.
+The braking result is one positive finding out of many attempts. The notebook reproduces 5,825 statistical tests, and I estimate that I ran several hundred more while developing the analysis.
 
 | What I tested | Tests | Result |
 |---|---|---|
@@ -108,8 +110,6 @@ The braking result is one positive finding out of many attempts. The notebook re
 | Whether drill traits predict route or alignment usage | 17 | No relationship |
 | Every pairwise interaction of Combine numbers and drill traits | 4,589 | Two pass correction, and neither holds up on closer inspection |
 | Whether a position improves from season 1 to season 2 or 3, and whether the Combine predicts who improves | 567 | Nothing passes correction |
-
-One result from the last group is worth checking with the 2026 class. Defensive linemen who played no snaps in their second season had much lower burst in the Combine pass-rush drill than those who played (0.7 standard deviations lower, p = 0.007). It does not pass correction across the 538 tests in that scan.
 
 I also trained two neural networks to match players across drills and games. They did not predict any outcome and are in the notebook appendix.
 

@@ -96,27 +96,28 @@ def benchmark(benchmarks: dict) -> plt.Figure:
     for name, label in labels.items():
         b = benchmarks[name]
         ax.text(0, y, label, fontweight="bold", va="center", ha="left")
-        y += 0.62
-        rows = [("From his Combine drills", b["combine_to_game"], b["combine_ci"], BLUE, f"{b['n']} receivers"),
-                ("From his previous NFL season", b["season_to_next_season"], b["season_ci"], GREY,
-                 f"{b['season_pairs']} pairs of seasons")]
-        for who, v, ci, color, n in rows:
+        ax.text(0, y + 0.33, f"{b['season_pairs']} pairs of seasons from {b['season_players']} receivers",
+                va="center", ha="left", fontsize=8.5, color=MUTED)
+        y += 0.8
+        rows = [("From his Combine drills", b["combine_to_next_season"], b["combine_next_ci"], BLUE),
+                ("From his previous NFL season", b["season_to_next_season"], b["season_ci"], GREY)]
+        for who, v, ci, color in rows:
             ax.barh(y, v, height=0.5, color=color, zorder=3)
             ax.plot(ci, [y, y], color=INK, lw=1.2, zorder=4)
             ax.text(0.9, y, _num(v), va="center", ha="left", fontsize=10, fontweight="bold")
-            ax.text(1.0, y, n, va="center", ha="left", fontsize=9, color=MUTED)
             ticks.append((y, who))
             y += 0.62
         y += 0.35
     ax.set_yticks([t[0] for t in ticks], [t[1] for t in ticks])
     ax.set_ylim(y - 0.6, -0.4)
-    ax.set_xlim(0, 1.32)
+    ax.set_xlim(-0.05, 1.0)
+    ax.axvline(0, color=MUTED, lw=0.8, zorder=2)
     ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8])
-    ax.set_xlabel("Correlation with the receiver's movement in games\n(black line: 95% interval)", loc="left")
+    ax.set_xlabel("Correlation with the receiver's movement in his next NFL season\n(black line: 95% interval)", loc="left")
     ax.grid(axis="y", visible=False)
     _title(fig, "The Combine compared with a season of NFL tracking",
-           "How well a receiver's movement in games is predicted by his Combine drills, and how well it is predicted by "
-           "the same measurement from his own previous NFL season. A correlation of 1 would be a perfect prediction.",
+           "How well a receiver's movement in an NFL season is predicted by his Combine drills, and by the same "
+           "measurement from his previous season. Both predict the same seasons. A correlation of 1 would be perfect.",
            top=0.975)
     fig.tight_layout(rect=(0, 0, 1, 0.8))
     return fig

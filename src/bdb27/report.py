@@ -94,7 +94,7 @@ def _row(t: pd.DataFrame, **where) -> pd.Series:
 
 def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_table: pd.DataFrame,
             group: pd.DataFrame, retention: pd.DataFrame, game_movement: pd.DataFrame,
-            coverage: pd.DataFrame) -> dict:
+            coverage: pd.DataFrame, agility: pd.DataFrame) -> dict:
     """The quoted values, rounded as the writeup prints them."""
     sw, mt, it, us, dv = (tables[k] for k in ("conventional", "matched", "interactions", "usage", "development"))
     wr = sw[(sw["position"] == "WR") & (sw["kind"] == "main")]
@@ -113,9 +113,23 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
     out[HEADLINE] |= {"ci95": robustness.attrs["ci95"], "perm_p": round(float(robustness.attrs["perm_p"]), 4)}
     out["robustness"] = {r["variant"]: round(r["partial_rho"], 2) for _, r in robustness.iterrows()}
     out["benchmark"] = {k: {"combine_to_game": round(float(b["combine_to_game"]), 2), "combine_ci": np.round(b["combine_ci"], 2).tolist(),
-                            "n": int(b["n"]), "season_to_next_season": round(float(b["season_to_next_season"]), 2),
-                            "season_ci": np.round(b["season_ci"], 2).tolist(), "season_pairs": int(b["season_pairs"]),
-                            "season_players": int(b["season_players"])} for k, b in benchmarks.items()}
+                            "n": int(b["n"]),
+                            "combine_to_next_season": round(float(b["combine_to_next_season"]), 2),
+                            "combine_next_ci": np.round(b["combine_next_ci"], 2).tolist(),
+                            "season_to_next_season": round(float(b["season_to_next_season"]), 2),
+                            "season_ci": np.round(b["season_ci"], 2).tolist(),
+                            "difference_ci": np.round(b["difference_ci"], 2).tolist(),
+                            "variance_share": round(float(b["variance_share"]), 2),
+                            "combine_given_season": round(float(b["combine_given_season"]), 2),
+                            "combine_given_season_p": round(float(b["combine_given_season_p"]), 2),
+                            "combine_given_season_n": int(b["combine_given_season_n"]),
+                            "season_pairs": int(b["season_pairs"]), "season_players": int(b["season_players"]),
+                            "game_reliability": round(float(b["game_reliability"]), 2),
+                            "drill_to_drill": None if np.isnan(b["drill_to_drill"]) else round(float(b["drill_to_drill"]), 2),
+                            "drill_reliability": None if np.isnan(b["drill_reliability"]) else round(float(b["drill_reliability"]), 2),
+                            "corrected_for_reliability": None if np.isnan(b["corrected_for_reliability"])
+                            else round(float(b["corrected_for_reliability"]), 2)}
+                        for k, b in benchmarks.items()}
     out["chain"] = [{"label": r["label"], "n": int(r["n"]), "partial_rho": round(r["partial_rho"], 2), "p": round(r["p"], 3),
                      "ci": [round(r["lo"], 2), round(r["hi"], 2)], "pre_specified": bool(r["pre_specified"])}
                     for _, r in chain_table.iterrows()]
@@ -125,6 +139,8 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
     out["coverage_profile"] = {"tests": len(coverage), "max_abs_partial": round(float(coverage["partial_rho"].abs().max()), 2),
                                "min_q": round(float(coverage["q"].min()), 2),
                                **{k: round(v, 2) if isinstance(v, float) else v for k, v in coverage.attrs.items()}}
+    out["agility"] = {r["time"]: {"n": int(r["n"]), "rho": round(float(r["rho"]), 2), "p": round(float(r["p"]), 2)}
+                      for _, r in agility.iterrows()}
     out["usage"] = {"tests": len(us), "min_partial_q": round(float(us["partial_q"].min()), 2)}
     out["interactions"] = {"tests": len(it), "p_family_below_05": int((it["p_family"] < 0.05).sum()),
                            "top": it.sort_values("p_family").head(3)[["position", "a", "b", "outcome", "n", "beta", "p_family"]]
@@ -134,7 +150,7 @@ def numbers(tables: dict, robustness: pd.DataFrame, benchmarks: dict, chain_tabl
                           "group": group.round(3).to_dict("records"), "dl_retention": retention.round(3).to_dict("records")}
     out["tests"] = test_count(tables | {"robustness": robustness, "value": chain_table.iloc[2:],
                                         "game_movement": game_movement, "coverage_profile": coverage,
-                                        "development_group": group})
+                                        "development_group": group, "agility": agility})
     return out
 
 

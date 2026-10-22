@@ -28,7 +28,7 @@
    "n": 70,
    "rho": -0.4,
    "p": 0.0005,
-   "p_family": 0.134
+   "p_family": 0.136
   },
   "combine_weight->sep_oe_all": {
    "n": 69,
@@ -52,13 +52,13 @@
    "n": 70,
    "rho": -0.25,
    "p": 0.0369,
-   "p_family": 0.976
+   "p_family": 0.978
   },
   "combine_height->sep_oe_all": {
    "n": 69,
    "rho": -0.41,
    "p": 0.0005,
-   "p_family": 0.133
+   "p_family": 0.135
   },
   "combine_height->targets_per_route": {
    "n": 69,
@@ -88,13 +88,13 @@
    "n": 69,
    "rho": -0.41,
    "p": 0.0005,
-   "p_family": 0.126
+   "p_family": 0.129
   },
   "log_pick->yards_per_route": {
    "n": 69,
    "rho": -0.4,
    "p": 0.0007,
-   "p_family": 0.155
+   "p_family": 0.157
   }
  },
  "stop-route braking": {
@@ -157,32 +157,66 @@
   "stop-route braking": {
    "combine_to_game": 0.42,
    "combine_ci": [
-    0.17,
-    0.61
+    0.18,
+    0.62
    ],
    "n": 54,
+   "combine_to_next_season": 0.33,
+   "combine_next_ci": [
+    -0.02,
+    0.61
+   ],
    "season_to_next_season": 0.56,
    "season_ci": [
-    0.3,
-    0.75
+    0.21,
+    0.74
    ],
+   "difference_ci": [
+    -0.24,
+    0.62
+   ],
+   "variance_share": 0.35,
+   "combine_given_season": 0.1,
+   "combine_given_season_p": 0.58,
+   "combine_given_season_n": 33,
    "season_pairs": 47,
-   "season_players": 33
+   "season_players": 33,
+   "game_reliability": 0.55,
+   "drill_to_drill": 0.26,
+   "drill_reliability": 0.41,
+   "corrected_for_reliability": 0.89
   },
   "40 tracked top speed": {
    "combine_to_game": 0.55,
    "combine_ci": [
-    0.31,
-    0.72
+    0.32,
+    0.71
    ],
    "n": 58,
+   "combine_to_next_season": 0.47,
+   "combine_next_ci": [
+    0.14,
+    0.69
+   ],
    "season_to_next_season": 0.67,
    "season_ci": [
-    0.45,
+    0.42,
     0.82
    ],
+   "difference_ci": [
+    -0.0,
+    0.45
+   ],
+   "variance_share": 0.48,
+   "combine_given_season": 0.14,
+   "combine_given_season_p": 0.42,
+   "combine_given_season_n": 34,
    "season_pairs": 48,
-   "season_players": 34
+   "season_players": 34,
+   "game_reliability": 0.84,
+   "drill_to_drill": null,
+   "drill_reliability": null,
+   "corrected_for_reliability": null
   }
  },
  "chain": [
@@ -340,6 +374,23 @@
   "man_zone_rho": 0.41,
   "man_zone_n": 63
  },
+ "agility": {
+  "three_cone": {
+   "n": 32,
+   "rho": -0.03,
+   "p": 0.87
+  },
+  "short_shuttle": {
+   "n": 36,
+   "rho": -0.08,
+   "p": 0.63
+  },
+  "forty": {
+   "n": 94,
+   "rho": -0.01,
+   "p": 0.95
+  }
+ },
  "usage": {
   "tests": 17,
   "min_partial_q": 0.74
@@ -373,7 +424,7 @@
     "outcome": "game_speed_p99",
     "n": 66,
     "beta": 0.475,
-    "p_family": 0.066
+    "p_family": 0.063
    }
   ]
  },
@@ -809,6 +860,7 @@
   "game_movement": 64,
   "coverage_profile": 12,
   "development_group": 29,
-  "total": 5822
+  "agility": 3,
+  "total": 5825
  }
 }
