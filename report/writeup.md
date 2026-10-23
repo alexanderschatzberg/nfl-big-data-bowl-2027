@@ -1,14 +1,13 @@
 # Predicting How Receivers Move: Combine Drills Against a Season of NFL Tracking
 
 ## Summary
-
-The Combine comeback and curl drills predict how hard a wide receiver brakes on hitch routes in NFL games, with Spearman ρ = 0.42 against his braking pooled over his NFL seasons. A season of his own NFL tracking is a better guide. Predicting the same NFL seasons, the drills reach ρ = 0.33 and the previous season ρ = 0.56. For top speed, the tracked 40-yard dash reaches 0.47 and a previous season 0.67. The drills give a team a partial read on how a receiver moves before he plays a snap, and once a season of game tracking exists they add nothing to it.
+Combine tracking records how prospects move, not only how fast they run. I measured peak sustained deceleration the same way in the Combine comeback and curl drills and on regular-season hitch routes for 54 wide receivers from the 2023–2025 draft classes. Drill braking predicts game braking (Spearman ρ = 0.42; partial ρ = 0.43 controlling for 40 time, height, weight and alignment; permutation p = 0.005). The result survives Benjamini–Hochberg correction across 29 drill-to-game pairings, and it is unrelated to 3-cone and shuttle times. Compared with a season of NFL tracking, the drills predict next-season braking at ρ = 0.33 against 0.56 for the previous season, and they add nothing once that season is known. Braking does not predict separation, including in a man-coverage test committed before it was run (partial ρ = 0.10, p = 0.52). The drills give an early, partial read on how a receiver moves, not on how productive he will be.
 
 - In both drills the receiver runs upfield, stops hard and comes back toward the ball, as on a hitch route. I measure braking from the Combine's 10 Hz tracking in the drills, and in the same way on hitch routes in regular-season games.
 - Receivers who brake harder in the drills also brake harder in games. Spearman ρ = 0.42 across 54 receivers, and partial ρ = 0.43 controlling for 40 time, height, weight and alignment.
 - Braking does not predict separation, in a test I committed before running it (0.10 against man coverage), and neither does braking measured in games.
 
-I would use the drills as an early read on how a receiver moves, replaced by game tracking once he plays. I would not use them to forecast how open or productive he will be.
+I would use the drills as an early read on how a receiver moves and how he may fit into an offensive system, replaced by game tracking once he plays. I would not use them to forecast how open or productive he will be. 
 
 ## Measuring braking the same way in the drill and in the game
 

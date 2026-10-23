@@ -56,4 +56,4 @@ Results are deterministic: rows are sorted before modelling and all random draws
 - **Game capability is an upper quantile.** Each receiver's 90th-percentile hitch route is used, because most routes don't call for a full stop. The median gives ρ = 0.18 (p = 0.19). `matched.robustness` reports every quantile.
 - **Cut-off clips are dropped.** Combine clips shorter than 65% of the drill's median length end before the receiver stops. Removing them (29 of 6,307) lowers the headline from 0.49 to 0.43.
 - **Game tracking covers only drafted cohort players.** There is no ball or opponent row, so separation and cushion come from `player_play.csv`.
-- **There is no holdout class.** All three draft classes were used during exploration. The 2026 class is the real test.
+- **There is no holdout class.** All three draft classes were used during exploration due to the limited dataset size. The 2026 class is the real test.
