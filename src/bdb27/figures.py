@@ -38,6 +38,10 @@ def _num(v: float) -> str:
     return f"{v:.2f}".replace("-", "−")
 
 
+def _p(p: float) -> str:
+    return "p < 0.001" if p < 0.001 else f"p = {p:.3f}" if p < 0.01 else f"p = {p:.2f}"
+
+
 def _fit(ax, x, y, color=MUTED) -> None:
     b = np.polyfit(x, y, 1)
     xs = np.array([np.min(x), np.max(x)])
@@ -55,15 +59,14 @@ def stopwatch(frame: pd.DataFrame) -> plt.Figure:
         _fit(ax, d["forty"], d[col])
         ax.axhline(0, color=MUTED, lw=0.8, ls=(0, (3, 3)), zorder=1)
         ax.set_title(name, pad=24)
-        ax.text(0, 1.03, f"Correlation {_num(rho)}", transform=ax.transAxes, fontsize=9.5,
+        ax.text(0, 1.03, f"ρ = {_num(rho)}, {_p(p)}", transform=ax.transAxes, fontsize=9.5,
                 color=INK if p < 0.05 else MUTED, fontweight="bold" if p < 0.05 else "normal")
         ax.set_xlabel("40-yard dash time (seconds)")
         ax.set_ylabel(f"Difference from average\n({units[col]})")
     _title(fig, "The 40-yard dash and four game outcomes for wide receivers",
-           "Each dot is one of 65 wide receivers from the 2023 to 2025 draft classes. Faster 40 times are on the left. Each outcome "
-           "is the receiver's regular-season value minus the average for receivers at his usual alignment (slot or "
-           "outside), so the dashed line is an average receiver. Blue marks the one clear relationship.")
-    fig.tight_layout(rect=(0, 0, 1, 0.8))
+           "65 wide receivers, 2023–2025 draft classes. Outcomes are regular-season values centred within alignment "
+           "(slot or outside). Spearman ρ.")
+    fig.tight_layout(rect=(0, 0, 1, 0.88))
     return fig
 
 
@@ -91,21 +94,20 @@ def transfer_scatter(d: pd.DataFrame, numbers: dict) -> plt.Figure:
     for year, g in d.groupby("draft_year"):
         rho = stats.spearmanr(g["c"], g["g"])[0]
         ax.scatter(g["c"], g["g"], s=46, color=CLASS_COLOR[year], marker=CLASS_MARKER[year], edgecolor=SURFACE,
-                   linewidth=1, zorder=3, label=f"{year} draft class (correlation {_num(rho)})")
+                   linewidth=1, zorder=3, label=f"{year} draft class (ρ = {_num(rho)})")
     _fit(ax, d["c"], d["g"], INK)
     _label_receivers(ax, d)
-    ax.set_xlabel("Braking in the Combine comeback and curl drills\n(standard deviations above or below his draft-class average)")
+    ax.set_xlabel("Braking in the Combine comeback and curl drills\n(z-score within draft class)")
     ax.set_ylabel("Braking on hitch routes in NFL games\n(yards per second², his 90th-percentile play)")
     ax.set_ylim(top=d["g"].max() + 0.7)
     ax.legend(loc="upper right", fontsize=9, handletextpad=0.2, borderaxespad=0.6)
     h = numbers[report.HEADLINE]
-    ax.text(0.03, 0.97, f"Correlation {_num(h['rho'])} across all {h['n']} receivers\n"
-            f"({_num(h['partial_rho'])} after accounting for 40 time,\nheight, weight and alignment)",
+    ax.text(0.03, 0.97, f"Spearman ρ = {_num(h['rho'])}, n = {h['n']}\n"
+            f"Partial ρ = {_num(h['partial_rho'])}, {_p(h['partial_p'])}\n(controls: 40 time, height, weight, alignment)",
             transform=ax.transAxes, va="top", fontsize=10, linespacing=1.4)
     _title(fig, "Braking in Combine drills and braking in NFL games",
-           f"Each point is one of {h['n']} wide receivers who ran both drills and at least 20 regular-season hitch routes. "
-           "Receivers further right braked harder in the drills, and receivers higher up braked harder in games.", top=0.985)
-    fig.tight_layout(rect=(0, 0, 1, 0.87))
+           f"{h['n']} wide receivers who ran both drills and at least 20 regular-season hitch routes.", top=0.985)
+    fig.tight_layout(rect=(0, 0, 1, 0.91))
     return fig
 
 
@@ -133,13 +135,13 @@ def benchmark(benchmarks: dict) -> plt.Figure:
     ax.set_xlim(-0.05, 1.0)
     ax.axvline(0, color=MUTED, lw=0.8, zorder=2)
     ax.set_xticks([0, 0.2, 0.4, 0.6, 0.8])
-    ax.set_xlabel("Correlation with the receiver's movement in his next NFL season\n(black line: 95% interval)", loc="left")
+    ax.set_xlabel("Spearman ρ with the same measure in the next NFL season\n(line: 95% bootstrap CI, resampling receivers)", loc="left")
     ax.grid(axis="y", visible=False)
     _title(fig, "The Combine compared with a season of NFL tracking",
            "How well a receiver's movement in an NFL season is predicted by his Combine drills, and by the same "
-           "measurement from his previous season. Both predict the same seasons. A correlation of 1 would be perfect.",
+           "measurement from his previous season.",
            top=0.975)
-    fig.tight_layout(rect=(0, 0, 1, 0.8))
+    fig.tight_layout(rect=(0, 0, 1, 0.86))
     return fig
 
 
@@ -160,9 +162,9 @@ ROBUST_LABELS = {
     "keeping cut-off drill clips": ("Which drill", "Both drills, keeping clips that were cut off early"),
     "all breaking routes": ("Which game routes", "All breaking routes"),
     "controlling for speed on hitch routes": ("Extra control", "His typical top speed on hitch routes"),
-    "placebo: go routes in games": ("Comparisons that should show no relationship", "Comeback and curl drills, with go routes in games"),
-    "placebo: go-route drill": ("Comparisons that should show no relationship", "Go-route drill, with hitch routes in games"),
-    "placebo: 40-yard dash": ("Comparisons that should show no relationship", "40-yard dash, with hitch routes in games"),
+    "placebo: go routes in games": ("Placebos", "Comeback and curl drills, with go routes in games"),
+    "placebo: go-route drill": ("Placebos", "Go-route drill, with hitch routes in games"),
+    "placebo: 40-yard dash": ("Placebos", "40-yard dash, with hitch routes in games"),
 }
 
 
@@ -186,8 +188,6 @@ def _rows(ax, table, group_of, draw, header_x: float) -> None:
 
 def robustness(table: pd.DataFrame) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(8.6, 6.9))
-    lo, hi = table.attrs["null95"]
-    ax.axvspan(lo, hi, color=GREY, alpha=0.18, zorder=1)
     ax.axvline(0, color=INK, lw=1, zorder=2)
 
     def draw(r, y):
@@ -195,17 +195,18 @@ def robustness(table: pd.DataFrame) -> plt.Figure:
         placebo = r["variant"].startswith("placebo")
         ax.scatter(r["partial_rho"], y, s=62, color=ORANGE if placebo else BLUE, marker="D" if placebo else "o",
                    edgecolor=SURFACE, linewidth=1, zorder=4)
-        ax.text(0.80, y, _num(r["partial_rho"]), va="center", ha="right", fontsize=9)
+        ax.text(0.66, y, _num(r["partial_rho"]), va="center", ha="right", fontsize=9)
+        ax.text(0.70, y, _p(r["partial_p"]), va="center", ha="left", fontsize=9, color=MUTED)
         return label
 
     _rows(ax, table, lambda r: ROBUST_LABELS[r["variant"]][0], draw, header_x=-0.035)
-    ax.set_xlim(-0.45, 0.82)
-    ax.set_xlabel("Correlation between drill braking and game braking\n(after accounting for 40 time, height, weight and alignment)")
+    ax.set_xlim(-0.45, 0.95)
+    ax.set_xticks([-0.4, -0.2, 0, 0.2, 0.4])
+    ax.set_xlabel("Partial Spearman ρ, drill braking vs game braking\n(controls: 40 time, height, weight, alignment)", loc="left")
     _title(fig, "The braking result under different analysis choices",
-           "Each row repeats the comparison of drill braking with game braking after changing one choice. The grey band "
-           "is the range expected by chance if drill and game braking were unrelated (95% of 2,000 shuffles). Orange "
-           "diamonds compare a drill with a game situation it does not rehearse.", top=0.985)
-    fig.tight_layout(rect=(0, 0, 1, 0.89))
+           "Each row changes one analysis choice. Orange diamonds are placebos: a drill paired with a game situation it "
+           "does not rehearse.", top=0.985)
+    fig.tight_layout(rect=(0, 0, 1, 0.91))
     return fig
 
 
@@ -227,11 +228,10 @@ def chain(table: pd.DataFrame) -> plt.Figure:
     _rows(ax, table, lambda r: r["stage"], draw, header_x=-0.02)
     ax.set_xlim(-0.75, 1.42)
     ax.set_xticks([-0.5, 0, 0.5])
-    ax.set_xlabel("Correlation after accounting for 40 time,\nheight, weight and alignment (line: 95% interval)", loc="left")
+    ax.set_xlabel("Partial Spearman ρ (controls: 40 time, height,\nweight, alignment); line: 95% bootstrap CI", loc="left")
     _title(fig, "Braking carries over to games but does not improve results on hitch routes",
-           "Wide receivers. Each row is the correlation between the two things named. A filled dot means the 95% "
-           "interval does not include zero, and an open dot means it does.", top=0.985)
-    fig.tight_layout(rect=(0, 0, 1, 0.89))
+           "Wide receivers. Filled dots: 95% CI excludes zero.", top=0.985)
+    fig.tight_layout(rect=(0, 0, 1, 0.93))
     return fig
 
 
@@ -277,6 +277,6 @@ def build(out: Path = Path("report/figures"), n_boot: int = 2000) -> list[Path]:
     benchmarks = {n: matched.benchmark(n) for n in (report.HEADLINE, report.SPEED)}
     d = report.scatter()
     t = matched.test(d)
-    numbers = {report.HEADLINE: {"n": t["n"], "rho": t["rho"], "partial_rho": t["partial_rho"]}}
+    numbers = {report.HEADLINE: {"n": t["n"], "rho": t["rho"], "partial_rho": t["partial_rho"], "partial_p": t["partial_p"]}}
     return save_all(out, stopwatch_frame=report.stopwatch_frame(), scatter=d, numbers=numbers, benchmarks=benchmarks,
                     robustness_table=rb, chain_table=report.chain(n_boot))

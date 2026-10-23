@@ -28,7 +28,7 @@
    "n": 70,
    "rho": -0.4,
    "p": 0.0005,
-   "p_family": 0.134
+   "p_family": 0.136
   },
   "combine_weight->sep_oe_all": {
    "n": 69,
@@ -58,7 +58,7 @@
    "n": 69,
    "rho": -0.41,
    "p": 0.0005,
-   "p_family": 0.133
+   "p_family": 0.135
   },
   "combine_height->targets_per_route": {
    "n": 69,
@@ -88,13 +88,13 @@
    "n": 69,
    "rho": -0.41,
    "p": 0.0005,
-   "p_family": 0.126
+   "p_family": 0.127
   },
   "log_pick->yards_per_route": {
    "n": 69,
    "rho": -0.4,
    "p": 0.0007,
-   "p_family": 0.154
+   "p_family": 0.157
   }
  },
  "stop-route braking": {
@@ -282,7 +282,7 @@
    "pre_specified": false
   },
   {
-   "label": "Stop-drill braking: yards after the catch, compared with expected",
+   "label": "Stop-drill braking: yards after the catch over expected",
    "n": 41,
    "partial_rho": -0.02,
    "p": 0.913,
@@ -326,7 +326,7 @@
    "pre_specified": false
   },
   {
-   "label": "Game hitch braking: yards after the catch, compared with expected",
+   "label": "Game hitch braking: yards after the catch over expected",
    "n": 41,
    "partial_rho": -0.29,
    "p": 0.071,
@@ -431,7 +431,7 @@
     "outcome": "game_speed_p99",
     "n": 66,
     "beta": 0.475,
-    "p_family": 0.066
+    "p_family": 0.064
    }
   ]
  },

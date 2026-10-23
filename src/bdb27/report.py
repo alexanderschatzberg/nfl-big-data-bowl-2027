@@ -62,7 +62,7 @@ def chain(n_boot: int = 2000) -> pd.DataFrame:
     for name, label in transfer.items():
         add("Combine movement and the same movement in games", label, matched.pair_frame(next(p for p in matched.PAIRS if p.name == name), plays))
     outcome = {("separation", "MAN_COVERAGE"): "separation against man coverage", ("separation", "ZONE_COVERAGE"): "separation against zone coverage",
-               ("target", "MAN_COVERAGE"): "target rate against man coverage", ("yac", None): "yards after the catch, compared with expected"}
+               ("target", "MAN_COVERAGE"): "target rate against man coverage", ("yac", None): "yards after the catch over expected"}
     stage = {"combine braking": ("Combine braking and results on hitch routes", "Stop-drill braking"),
              "game hitch braking": ("Game braking and results on hitch routes", "Game hitch braking")}
     for i, (pred, y, cov, d) in enumerate(value.frames()):
