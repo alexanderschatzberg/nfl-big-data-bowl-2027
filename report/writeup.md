@@ -2,9 +2,9 @@
 
 ## Summary
 
-Two Combine drills predict how hard a wide receiver brakes on hitch routes in NFL games, with Spearman ρ = 0.42 against his braking pooled over his NFL seasons. A season of his own NFL tracking is a better guide. Predicting the same NFL seasons, the drills reach ρ = 0.33 and the previous season ρ = 0.56. For top speed, the tracked 40-yard dash reaches 0.47 and a previous season 0.67. The drills give a team a partial read on how a receiver moves before he plays a snap, and once a season of game tracking exists they add nothing to it.
+The Combine comeback and curl drills predict how hard a wide receiver brakes on hitch routes in NFL games, with Spearman ρ = 0.42 against his braking pooled over his NFL seasons. A season of his own NFL tracking is a better guide. Predicting the same NFL seasons, the drills reach ρ = 0.33 and the previous season ρ = 0.56. For top speed, the tracked 40-yard dash reaches 0.47 and a previous season 0.67. The drills give a team a partial read on how a receiver moves before he plays a snap, and once a season of game tracking exists they add nothing to it.
 
-- I measure braking from the Combine's 10 Hz tracking in the comeback and curl drills, and in the same way on hitch routes in regular-season games.
+- In both drills the receiver runs upfield, stops hard and comes back toward the ball, as on a hitch route. I measure braking from the Combine's 10 Hz tracking in the drills, and in the same way on hitch routes in regular-season games.
 - Receivers who brake harder in the drills also brake harder in games. Spearman ρ = 0.42 across 54 receivers, and partial ρ = 0.43 controlling for 40 time, height, weight and alignment.
 - Braking does not predict separation, in a test I committed before running it (0.10 against man coverage), and neither does braking measured in games.
 

@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | **Title** (≤ 80) | Predicting How Receivers Move: Combine Drills Against a Season of NFL Tracking |
-| **Subtitle** (≤ 140) | Two Combine drills predict how hard a receiver brakes in NFL games before his first snap, though less well than a season of NFL tracking. |
+| **Subtitle** (≤ 140) | The Combine comeback and curl drills predict how hard a receiver brakes on NFL hitch routes, though less well than a season of NFL tracking. |
 | **Card and thumbnail image** | `report/figures/card_560x280.png` (560 × 280) |
 | **Submission track** | University track |
 | **Project description** | Paste `report/writeup.md` |
