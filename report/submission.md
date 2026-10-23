@@ -6,7 +6,7 @@
 | **Subtitle** (≤ 140) | The Combine comeback and curl drills predict how hard a receiver brakes on NFL hitch routes, though less well than a season of NFL tracking. |
 | **Card and thumbnail image** | `report/figures/card_560x280.png` (560 × 280) |
 | **Submission track** | University track |
-| **Project description** | Paste `report/writeup.md` |
+| **Project description** | Paste `report/writeup_kaggle.md` |
 | **DOI citation** | Your choice; not needed for judging |
 
 ## Media gallery
@@ -22,7 +22,7 @@ Upload in this order (file names are unchanged; the benchmark is the lead claim,
 
 ## Images inside the description
 
-`writeup.md` embeds the six figures with relative paths, in the order fig6, fig3, fig2, fig4, fig1, fig5. Kaggle's editor will not resolve those. When pasting, either drag each PNG into the editor at its place, or replace each path with the image's public URL. The count is 6 figures + 1 table (limit: fewer than 10). The text is 1,975 words including the table and headings, not counting image tags (limit: 2,000).
+`writeup.md` embeds the six figures with relative paths, which Kaggle cannot resolve. Paste `writeup_kaggle.md` instead: the same text with each image pointing at its raw GitHub URL, pinned to a commit. If the figures or text change, push, then regenerate it with `sed "s#](figures/#](https://raw.githubusercontent.com/alexanderschatzberg/nfl-big-data-bowl-2027/$(git rev-parse HEAD)/report/figures/#" report/writeup.md > report/writeup_kaggle.md`. The count is 6 figures + 1 table (limit: fewer than 10). The text is 1,975 words including the table and headings, not counting image tags (limit: 2,000).
 
 ## Attachments
 
